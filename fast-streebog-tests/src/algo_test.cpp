@@ -943,3 +943,50 @@ TEST(FastStreebog, TestStreamingAPI_QuickBrownFox)
 
     EXPECT_EQ(hash_oneshot, hash_streaming) << "Byte-by-byte streaming mismatch";
 }
+
+TEST(FastStreebog, TestHash256_TestWOW)
+{
+    std::string msg = "Test test Test Test WOWOWOWOWOWOWOWOWOW";
+
+    std::vector<uint8_t> hash(32);
+    STREEBOG_NAMESPACE(hash_256)((const uint8_t *)msg.data(), msg.size(), hash.data());
+
+    // Expected: ebaf1800aec2524befcf447f2a2438e2bc31616259949365480c7644a7ff648d
+    const uint8_t expected_256[] = {0xeb, 0xaf, 0x18, 0x00, 0xae, 0xc2, 0x52, 0x4b, 0xef, 0xcf, 0x44,
+                                    0x7f, 0x2a, 0x24, 0x38, 0xe2, 0xbc, 0x31, 0x61, 0x62, 0x59, 0x94,
+                                    0x93, 0x65, 0x48, 0x0c, 0x76, 0x44, 0xa7, 0xff, 0x64, 0x8d};
+
+    std::cout << "Got TestWOW 256: ";
+    for (int i = 0; i < 32; i++)
+    {
+        printf("%02x", hash[i]);
+    }
+    std::cout << std::endl;
+
+    EXPECT_EQ(memcmp(hash.data(), expected_256, 32), 0) << "TestWOW 256-bit hash mismatch";
+}
+
+TEST(FastStreebog, TestHash512_TestWOW)
+{
+    std::string msg = "Test test Test Test WOWOWOWOWOWOWOWOWOW";
+
+    std::vector<uint8_t> hash(64);
+    STREEBOG_NAMESPACE(hash_512)((const uint8_t *)msg.data(), msg.size(), hash.data());
+
+    // Expected:
+    // a6df435f6258531b759b405437be0f7300e23a8d1eefcdc3abc5da180c4def8ec6ed5a092f9c7363824c17f1ecabc97876af8f3c1a75df948f6ad680e16b4172
+    const uint8_t expected_512[] = {0xa6, 0xdf, 0x43, 0x5f, 0x62, 0x58, 0x53, 0x1b, 0x75, 0x9b, 0x40, 0x54, 0x37,
+                                    0xbe, 0x0f, 0x73, 0x00, 0xe2, 0x3a, 0x8d, 0x1e, 0xef, 0xcd, 0xc3, 0xab, 0xc5,
+                                    0xda, 0x18, 0x0c, 0x4d, 0xef, 0x8e, 0xc6, 0xed, 0x5a, 0x09, 0x2f, 0x9c, 0x73,
+                                    0x63, 0x82, 0x4c, 0x17, 0xf1, 0xec, 0xab, 0xc9, 0x78, 0x76, 0xaf, 0x8f, 0x3c,
+                                    0x1a, 0x75, 0xdf, 0x94, 0x8f, 0x6a, 0xd6, 0x80, 0xe1, 0x6b, 0x41, 0x72};
+
+    std::cout << "Got TestWOW 512: ";
+    for (int i = 0; i < 64; i++)
+    {
+        printf("%02x", hash[i]);
+    }
+    std::cout << std::endl;
+
+    EXPECT_EQ(memcmp(hash.data(), expected_512, 64), 0) << "TestWOW 512-bit hash mismatch";
+}

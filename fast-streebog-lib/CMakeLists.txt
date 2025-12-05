@@ -14,6 +14,7 @@ if (MSVC)
         windows/streebog_p_transform.asm
         windows/streebog_l_transform.asm
         windows/streebog_key_schedule.asm
+        windows/streebog_e_transform.asm
     )
 endif()
 
@@ -37,6 +38,7 @@ if(MSVC)
     set_source_files_properties(windows/streebog_p_transform.asm PROPERTIES LANGUAGE ASM_MASM)
     set_source_files_properties(windows/streebog_l_transform.asm PROPERTIES LANGUAGE ASM_MASM)
     set_source_files_properties(windows/streebog_key_schedule.asm PROPERTIES LANGUAGE ASM_MASM)
+    set_source_files_properties(windows/streebog_e_transform.asm PROPERTIES LANGUAGE ASM_MASM)
     # Включаем отладочную информацию для ассемблера
     set(CMAKE_ASM_MASM_FLAGS_DEBUG "/Zi")
     target_compile_options(fast-streebog-lib PRIVATE /Zi)

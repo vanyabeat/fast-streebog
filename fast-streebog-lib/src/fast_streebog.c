@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _MSC_VER
 // E transformation: E(K, m)
 // Performs 12 rounds of S->P->L->KeySchedule->XOR
+// On MSVC, this is implemented in assembly (streebog_e_transform.asm)
 void STREEBOG_NAMESPACE(e_transform)(const uint8_t *K, const uint8_t *m, uint8_t *out)
 {
     uint8_t state[64];
@@ -37,6 +39,7 @@ void STREEBOG_NAMESPACE(e_transform)(const uint8_t *K, const uint8_t *m, uint8_t
     // Return state as result
     memcpy(out, state, 64);
 }
+#endif
 
 // G_n compression function: g(N, h, m)
 // K = L(P(S(h ^ N)))
@@ -99,7 +102,7 @@ static void process_block(streebog_ctx *ctx, const uint8_t *block)
     // N_512 = 512 as 64-byte big-endian
     static const uint8_t N_512[64] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    0,   0, 0,
                                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    0,   0, 0,
-                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, 0x00};
+                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00};
 
     // h = g(N, h, m)
     STREEBOG_NAMESPACE(g_n)(ctx->N, ctx->h, block, ctx->h);
