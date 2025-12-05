@@ -1,0 +1,3 @@
+# Microsoft C++ Code Style
+BasedOnStyle: Microsoft
+Language: Cpp
