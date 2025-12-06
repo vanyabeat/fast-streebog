@@ -100,9 +100,9 @@ void STREEBOG_NAMESPACE(init_256)(streebog_ctx *ctx)
 static void process_block(streebog_ctx *ctx, const uint8_t *block)
 {
     // N_512 = 512 as 64-byte big-endian
-    static const uint8_t N_512[64] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    0,   0, 0,
-                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    0,   0, 0,
-                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00};
+    static const uint8_t N_512[64] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // h = g(N, h, m)
     STREEBOG_NAMESPACE(g_n)(ctx->N, ctx->h, block, ctx->h);
@@ -260,4 +260,35 @@ void STREEBOG_NAMESPACE(hash_256)(const uint8_t *data, size_t len, uint8_t *out)
     STREEBOG_NAMESPACE(init_256)(&ctx);
     STREEBOG_NAMESPACE(update)(&ctx, data, len);
     STREEBOG_NAMESPACE(final)(&ctx, out);
+}
+
+// ==================== Hex string functions ====================
+
+static const char HEX_CHARS[] = "0123456789abcdef";
+
+// Convert raw hash bytes to hex string
+void STREEBOG_NAMESPACE(bytes_to_hex)(const uint8_t *hash, size_t hash_len, char *out)
+{
+    for (size_t i = 0; i < hash_len; i++)
+    {
+        out[i * 2] = HEX_CHARS[(hash[i] >> 4) & 0x0F];
+        out[i * 2 + 1] = HEX_CHARS[hash[i] & 0x0F];
+    }
+    out[hash_len * 2] = '\0';
+}
+
+// Compute 512-bit hash and return as hex string
+void STREEBOG_NAMESPACE(hash_512_hex)(const uint8_t *data, size_t len, char *out)
+{
+    uint8_t hash[64];
+    STREEBOG_NAMESPACE(hash_512)(data, len, hash);
+    STREEBOG_NAMESPACE(bytes_to_hex)(hash, 64, out);
+}
+
+// Compute 256-bit hash and return as hex string
+void STREEBOG_NAMESPACE(hash_256_hex)(const uint8_t *data, size_t len, char *out)
+{
+    uint8_t hash[32];
+    STREEBOG_NAMESPACE(hash_256)(data, len, hash);
+    STREEBOG_NAMESPACE(bytes_to_hex)(hash, 32, out);
 }
