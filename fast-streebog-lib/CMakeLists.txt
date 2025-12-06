@@ -89,7 +89,7 @@ endif()
 # ==================== Release Distribution (Windows) ====================
 set(RELEASE_DIR "${CMAKE_SOURCE_DIR}/streebog_windows")
 
-# Copy DLL, import library and header to release folder after build
+# Copy DLL, import library, static library and header to release folder after build
 add_custom_command(TARGET fast-streebog-dll POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${RELEASE_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -99,10 +99,16 @@ add_custom_command(TARGET fast-streebog-dll POST_BUILD
         "$<TARGET_LINKER_FILE:fast-streebog-dll>"
         "${RELEASE_DIR}/"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:fast-streebog-lib>"
+        "${RELEASE_DIR}/fast-streebog-static.lib"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/dist/streebog.h"
         "${RELEASE_DIR}/"
-    COMMENT "Copying DLL, import library and header to streebog_windows folder"
+    COMMENT "Copying DLL, static library, import library and header to streebog_windows folder"
 )
+
+# Ensure static library is built before DLL post-build commands run
+add_dependencies(fast-streebog-dll fast-streebog-lib)
 
 # ==================== Installation ====================
 include(GNUInstallDirs)

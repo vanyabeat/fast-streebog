@@ -68,12 +68,13 @@ jobs:
             
             High-performance implementation of GOST R 34.11-2012 (Streebog) hash function with x64 assembly optimizations.
             
-            ### Windows DLL
+            ### Windows x64
             - `fast-streebog.dll` - Dynamic library
-            - `fast-streebog.lib` - Import library for linking
+            - `fast-streebog.lib` - Import library for DLL linking
+            - `fast-streebog-static.lib` - Static library
             - `streebog.h` - Header file
             
-            ### Usage
+            ### Usage (DLL)
             ```c
             #define STREEBOG_USE_DLL
             #include "streebog.h"
@@ -82,6 +83,13 @@ jobs:
             streebog_hash_512_hex((const uint8_t*)"test", 4, hash);
             printf("Hash: %s\n", hash);
             printf("Version: %s\n", streebog_version());
+            ```
+            
+            ### Usage (Static)
+            ```c
+            #include "streebog.h"
+            
+            // Link with fast-streebog-static.lib
             ```
           files: streebog_windows.zip
           draft: false
