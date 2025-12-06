@@ -2,6 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Library version - injected by CMake from VERSION file
+#ifndef STREEBOG_VERSION
+#define STREEBOG_VERSION "unknown"
+#endif
+
+STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void)
+{
+    return STREEBOG_VERSION;
+}
+
 #ifndef _MSC_VER
 // E transformation: E(K, m)
 // Performs 12 rounds of S->P->L->KeySchedule->XOR

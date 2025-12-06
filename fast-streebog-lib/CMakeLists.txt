@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 project(fast-streebog-lib LANGUAGES C CXX)
 
+# Read version from VERSION file
+file(READ "${CMAKE_SOURCE_DIR}/VERSION" STREEBOG_VERSION)
+string(STRIP "${STREEBOG_VERSION}" STREEBOG_VERSION)
+message(STATUS "Building fast-streebog version: ${STREEBOG_VERSION}")
+
 # Option to build shared library (DLL)
 option(BUILD_SHARED_LIBS "Build shared library (DLL on Windows)" OFF)
 
@@ -29,6 +34,9 @@ target_include_directories(fast-streebog-lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# Pass version to source code
+target_compile_definitions(fast-streebog-lib PRIVATE STREEBOG_VERSION="${STREEBOG_VERSION}")
+
 if(MSVC)
     target_compile_options(fast-streebog-lib PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:/W4>)
 else()
@@ -41,7 +49,10 @@ add_library(fast-streebog-dll SHARED
 )
 
 # Define STREEBOG_BUILD_DLL when building the DLL
-target_compile_definitions(fast-streebog-dll PRIVATE STREEBOG_BUILD_DLL)
+target_compile_definitions(fast-streebog-dll PRIVATE 
+    STREEBOG_BUILD_DLL
+    STREEBOG_VERSION="${STREEBOG_VERSION}"
+)
 
 if (MSVC)
     target_sources(fast-streebog-dll PRIVATE ${ASM_SOURCES})
@@ -54,7 +65,7 @@ target_include_directories(fast-streebog-dll PUBLIC
 # Set output name to fast-streebog (without -dll suffix)
 set_target_properties(fast-streebog-dll PROPERTIES
     OUTPUT_NAME "fast-streebog"
-    VERSION 1.0.0
+    VERSION ${STREEBOG_VERSION}
     SOVERSION 1
 )
 

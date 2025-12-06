@@ -138,6 +138,12 @@ extern "C"
      */
     STREEBOG_API void streebog_bytes_to_hex(const uint8_t *hash, size_t hash_len, char *out);
 
+    /**
+     * @brief Get library version string
+     * @return Version string (e.g., "1.0.0")
+     */
+    STREEBOG_API const char *streebog_version(void);
+
 #ifdef __cplusplus
 }
 #endif

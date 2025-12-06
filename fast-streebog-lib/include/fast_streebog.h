@@ -87,6 +87,9 @@ extern "C"
     // out must be at least (hash_len * 2 + 1) bytes
     STREEBOG_API void STREEBOG_NAMESPACE(bytes_to_hex)(const uint8_t *hash, size_t hash_len, char *out);
 
+    // Get library version string (e.g., "1.0.0")
+    STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,0 +1,87 @@
+name: Build and Release Windows DLL
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: false
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from file
+        id: version
+        shell: pwsh
+        run: |
+          $version = Get-Content -Path VERSION -Raw
+          $version = $version.Trim()
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Building version: $version"
+
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configure CMake
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build Release DLL
+        run: cmake --build build --config Release --target fast-streebog-dll
+
+      - name: Verify build output
+        shell: pwsh
+        run: |
+          Write-Host "Contents of streebog_windows:"
+          Get-ChildItem -Path streebog_windows | Format-Table Name, Length
+
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          Compress-Archive -Path streebog_windows\* -DestinationPath streebog_windows.zip
+          Write-Host "Created streebog_windows.zip"
+          Get-ChildItem streebog_windows.zip | Format-Table Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: streebog_windows
+          path: streebog_windows.zip
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Fast Streebog v${{ steps.version.outputs.VERSION }}
+            
+            High-performance implementation of GOST R 34.11-2012 (Streebog) hash function with x64 assembly optimizations.
+            
+            ### Windows DLL
+            - `fast-streebog.dll` - Dynamic library
+            - `fast-streebog.lib` - Import library for linking
+            - `streebog.h` - Header file
+            
+            ### Usage
+            ```c
+            #define STREEBOG_USE_DLL
+            #include "streebog.h"
+            
+            char hash[129];
+            streebog_hash_512_hex((const uint8_t*)"test", 4, hash);
+            printf("Hash: %s\n", hash);
+            printf("Version: %s\n", streebog_version());
+            ```
+          files: streebog_windows.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
