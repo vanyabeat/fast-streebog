@@ -17,6 +17,23 @@ Fast Streebog is a optimized library implementing the Russian national standard 
 - **Hex Output**: Built-in conversion to hexadecimal strings
 - **DLL Distribution**: Easy integration via dynamic library
 
+## Performance
+
+Performance comparison on 1 MB data (3 iterations average):
+
+| Implementation | Throughput | Speedup |
+|---------------|------------|---------|
+| **Fast Streebog (ASM + Lookup Tables)** | **97.31 MB/s** | **68x** |
+| Pure C Implementation | 1.43 MB/s | 1x |
+
+**Key optimizations:**
+- Precalculated Ax[8][256] lookup tables (16 KB) for L-transform
+- AVX-512 assembly implementations of S, P, L, XOR, ADD, and KeySchedule primitives
+- Optimized L-transform: 8 table lookups instead of up to 64 bit-by-bit operations
+- Hybrid C+ASM architecture with Release build optimizations
+
+Tested on Windows x64 with Visual Studio 2022 (MSVC 19.44).
+
 ## Requirements
 
 - Windows x64
