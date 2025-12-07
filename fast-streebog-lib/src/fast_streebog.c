@@ -12,10 +12,9 @@ STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void)
     return STREEBOG_VERSION;
 }
 
-#ifndef _MSC_VER
 // E transformation: E(K, m)
 // Performs 12 rounds of S->P->L->KeySchedule->XOR
-// On MSVC, this is implemented in assembly (streebog_e_transform.asm)
+// Always use C implementation - it calls optimized ASM for S/P/L/KeySchedule
 void STREEBOG_NAMESPACE(e_transform)(const uint8_t *K, const uint8_t *m, uint8_t *out)
 {
     uint8_t state[64];
@@ -49,12 +48,12 @@ void STREEBOG_NAMESPACE(e_transform)(const uint8_t *K, const uint8_t *m, uint8_t
     // Return state as result
     memcpy(out, state, 64);
 }
-#endif
 
 // G_n compression function: g(N, h, m)
 // K = L(P(S(h ^ N)))
 // t = E(K, m)
 // return t ^ h ^ m
+// Always use C implementation - it calls optimized ASM for primitives
 void STREEBOG_NAMESPACE(g_n)(const uint8_t *N, const uint8_t *h, const uint8_t *m, uint8_t *out)
 {
     uint8_t K[64];

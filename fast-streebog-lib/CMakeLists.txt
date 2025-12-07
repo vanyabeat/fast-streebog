@@ -10,6 +10,7 @@ message(STATUS "Building fast-streebog version: ${STREEBOG_VERSION}")
 option(BUILD_SHARED_LIBS "Build shared library (DLL on Windows)" OFF)
 
 # ASM source files for Windows
+# Only low-level primitives - e_transform and g_n use C implementations
 set(ASM_SOURCES
     windows/streebog_xor_512.asm
     windows/streebog_add_512.asm
@@ -17,8 +18,6 @@ set(ASM_SOURCES
     windows/streebog_p_transform.asm
     windows/streebog_l_transform.asm
     windows/streebog_key_schedule.asm
-    windows/streebog_e_transform.asm
-    # windows/streebog_g_n.asm  # TODO: fix asm implementation
 )
 
 # ==================== Static Library ====================

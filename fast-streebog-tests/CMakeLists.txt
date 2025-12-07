@@ -15,6 +15,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(fast-streebog-tests
     src/algo_test.cpp
+    src/performance_test.cpp
 )
 
 target_link_libraries(fast-streebog-tests PRIVATE

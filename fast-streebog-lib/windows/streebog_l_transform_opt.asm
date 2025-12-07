@@ -2,15 +2,20 @@
 ; This version uses table lookups instead of bit-by-bit operations
 ; Expected speedup: 8-35x faster than the original implementation
 
-.data
-ALIGN 16
+INCLUDELIB streebog_precalc_tables.asm
 
-; Include precalculated Ax tables
-INCLUDE streebog_precalc_tables.asm
+EXTERN Ax_COL0:QWORD
+EXTERN Ax_COL1:QWORD
+EXTERN Ax_COL2:QWORD
+EXTERN Ax_COL3:QWORD
+EXTERN Ax_COL4:QWORD
+EXTERN Ax_COL5:QWORD
+EXTERN Ax_COL6:QWORD
+EXTERN Ax_COL7:QWORD
 
 .code
 
-streebog_l_transform PROC
+streebog_l_transform_optimized PROC
     ; rcx = input pointer (const uint8_t *state)
     ; rdx = output pointer (uint8_t *out)
     
@@ -40,28 +45,28 @@ process_block:
     movzx r13, BYTE PTR [rsi + r12*8 + 7]   ; byte 7
     
     ; Lookup in tables: result = Ax[0][byte0] ^ Ax[1][byte1] ^ ... ^ Ax[7][byte7]
-    lea r14, [Ax_COL0]
+    lea r14, QWORD PTR [Ax_COL0]
     mov r15, QWORD PTR [r14 + rax*8]        ; r15 = Ax[0][byte0]
     
-    lea r14, [Ax_COL1]
+    lea r14, QWORD PTR [Ax_COL1]
     xor r15, QWORD PTR [r14 + rbx*8]        ; r15 ^= Ax[1][byte1]
     
-    lea r14, [Ax_COL2]
+    lea r14, QWORD PTR [Ax_COL2]
     xor r15, QWORD PTR [r14 + rcx*8]        ; r15 ^= Ax[2][byte2]
     
-    lea r14, [Ax_COL3]
+    lea r14, QWORD PTR [Ax_COL3]
     xor r15, QWORD PTR [r14 + r8*8]         ; r15 ^= Ax[3][byte3]
     
-    lea r14, [Ax_COL4]
+    lea r14, QWORD PTR [Ax_COL4]
     xor r15, QWORD PTR [r14 + r9*8]         ; r15 ^= Ax[4][byte4]
     
-    lea r14, [Ax_COL5]
+    lea r14, QWORD PTR [Ax_COL5]
     xor r15, QWORD PTR [r14 + r10*8]        ; r15 ^= Ax[5][byte5]
     
-    lea r14, [Ax_COL6]
+    lea r14, QWORD PTR [Ax_COL6]
     xor r15, QWORD PTR [r14 + r11*8]        ; r15 ^= Ax[6][byte6]
     
-    lea r14, [Ax_COL7]
+    lea r14, QWORD PTR [Ax_COL7]
     xor r15, QWORD PTR [r14 + r13*8]        ; r15 ^= Ax[7][byte7]
     
     ; Convert to big-endian and store
@@ -81,6 +86,6 @@ process_block:
     pop rsi
     pop rbx
     ret
-streebog_l_transform ENDP
+streebog_l_transform_optimized ENDP
 
 END
