@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
 project(fast-streebog-lib LANGUAGES C CXX)
 
-# Read version from VERSION file
-file(READ "${CMAKE_SOURCE_DIR}/VERSION" STREEBOG_VERSION)
+option(FAST_STREEBOG_AS_SUBDIR "Build as subdirectory of another project" OFF)
+if(FAST_STREEBOG_AS_SUBDIR)
+  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION" STREEBOG_VERSION)
+else()
+  file(READ "${CMAKE_SOURCE_DIR}/VERSION" STREEBOG_VERSION)
+endif()
 string(STRIP "${STREEBOG_VERSION}" STREEBOG_VERSION)
 message(STATUS "Building fast-streebog version: ${STREEBOG_VERSION}")
 
@@ -86,39 +90,45 @@ if(MSVC)
 endif()
 
 # ==================== Release Distribution (Windows) ====================
-set(RELEASE_DIR "${CMAKE_SOURCE_DIR}/streebog_windows")
+# Only create release distribution when building standalone
+if(NOT FAST_STREEBOG_AS_SUBDIR)
+    set(RELEASE_DIR "${CMAKE_SOURCE_DIR}/streebog_windows")
 
-# Copy DLL, import library, static library and header to release folder after build
-add_custom_command(TARGET fast-streebog-dll POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${RELEASE_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:fast-streebog-dll>"
-        "${RELEASE_DIR}/"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_LINKER_FILE:fast-streebog-dll>"
-        "${RELEASE_DIR}/"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:fast-streebog-lib>"
-        "${RELEASE_DIR}/fast-streebog-static.lib"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/dist/streebog.h"
-        "${RELEASE_DIR}/"
-    COMMENT "Copying DLL, static library, import library and header to streebog_windows folder"
-)
+    # Copy DLL, import library, static library and header to release folder after build
+    add_custom_command(TARGET fast-streebog-dll POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${RELEASE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:fast-streebog-dll>"
+            "${RELEASE_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_LINKER_FILE:fast-streebog-dll>"
+            "${RELEASE_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:fast-streebog-lib>"
+            "${RELEASE_DIR}/fast-streebog-static.lib"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/dist/streebog.h"
+            "${RELEASE_DIR}/"
+        COMMENT "Copying DLL, static library, import library and header to streebog_windows folder"
+    )
+endif()
 
 # Ensure static library is built before DLL post-build commands run
 add_dependencies(fast-streebog-dll fast-streebog-lib)
 
 # ==================== Installation ====================
-include(GNUInstallDirs)
+# Only install when building standalone
+if(NOT FAST_STREEBOG_AS_SUBDIR)
+    include(GNUInstallDirs)
 
-install(TARGETS fast-streebog-lib fast-streebog-dll
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+    install(TARGETS fast-streebog-lib fast-streebog-dll
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 
-install(DIRECTORY include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fast-streebog
-    FILES_MATCHING PATTERN "*.h"
-)
+    install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fast-streebog
+        FILES_MATCHING PATTERN "*.h"
+    )
+endif()
