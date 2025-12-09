@@ -144,6 +144,33 @@ extern "C"
      */
     STREEBOG_API const char *streebog_version(void);
 
+    /* ==================== File hashing API ==================== */
+
+    /**
+     * @brief Hash file and compute both 256-bit and 512-bit hashes in one pass
+     *
+     * This function is optimized for FFI usage - it processes the entire file
+     * with a single function call, eliminating FFI overhead for large files.
+     *
+     * @param filepath Path to file to hash (UTF-8 encoded)
+     * @param hash_256 Output buffer for 256-bit hash (must be 32 bytes), can be NULL
+     * @param hash_512 Output buffer for 512-bit hash (must be 64 bytes), can be NULL
+     * @param progress_callback Optional progress callback function, can be NULL
+     * @param user_data User data to pass to progress callback
+     * @return 0 on success, -1 on file open error, -2 on read error, -3 if both outputs are NULL
+     *
+     * Example:
+     *   uint8_t hash_256[32], hash_512[64];
+     *   int result = streebog_hash_file_dual("test.bin", hash_256, hash_512, NULL, NULL);
+     *   if (result == 0) {
+     *       // Success - both hashes computed
+     *   }
+     */
+    STREEBOG_API int streebog_hash_file_dual(const char *filepath, uint8_t *hash_256, uint8_t *hash_512,
+                                             void (*progress_callback)(size_t bytes_processed, size_t total_size,
+                                                                       void *user_data),
+                                             void *user_data);
+
 #ifdef __cplusplus
 }
 #endif

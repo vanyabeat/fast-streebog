@@ -90,6 +90,21 @@ extern "C"
     // Get library version string (e.g., "1.0.0")
     STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void);
 
+    // ==================== File hashing API ====================
+
+    // Hash file and compute both 256-bit and 512-bit hashes in one pass
+    // Optimized for FFI usage - single function call eliminates FFI overhead
+    // filepath - path to file (UTF-8 encoded)
+    // hash_256 - output for 256-bit hash (32 bytes), can be NULL
+    // hash_512 - output for 512-bit hash (64 bytes), can be NULL
+    // progress_callback - optional progress callback, can be NULL
+    // user_data - user data passed to progress callback
+    // Returns: 0 on success, -1 on file open error, -2 on read error, -3 if both outputs are NULL
+    STREEBOG_API int STREEBOG_NAMESPACE(hash_file_dual)(const char *filepath, uint8_t *hash_256, uint8_t *hash_512,
+                                                        void (*progress_callback)(size_t bytes_processed,
+                                                                                  size_t total_size, void *user_data),
+                                                        void *user_data);
+
 #ifdef __cplusplus
 }
 #endif

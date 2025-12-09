@@ -1,4 +1,5 @@
 #include "fast_streebog.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -300,4 +301,82 @@ void STREEBOG_NAMESPACE(hash_256_hex)(const uint8_t *data, size_t len, char *out
     uint8_t hash[32];
     STREEBOG_NAMESPACE(hash_256)(data, len, hash);
     STREEBOG_NAMESPACE(bytes_to_hex)(hash, 32, out);
+}
+
+// ==================== File hashing API ====================
+
+// Hash file and compute both 256-bit and 512-bit hashes in one pass
+// Optimized for FFI usage - single function call eliminates FFI overhead
+int STREEBOG_NAMESPACE(hash_file_dual)(const char *filepath, uint8_t *hash_256, uint8_t *hash_512,
+                                       void (*progress_callback)(size_t bytes_processed, size_t total_size,
+                                                                 void *user_data),
+                                       void *user_data)
+{
+    // Validate parameters
+    if (hash_256 == NULL && hash_512 == NULL)
+    {
+        return -3;
+    }
+
+    FILE *file = fopen(filepath, "rb");
+    if (file == NULL)
+    {
+        return -1;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    streebog_ctx ctx_256, ctx_512;
+    if (hash_256 != NULL)
+    {
+        STREEBOG_NAMESPACE(init_256)(&ctx_256);
+    }
+    if (hash_512 != NULL)
+    {
+        STREEBOG_NAMESPACE(init_512)(&ctx_512);
+    }
+
+    uint8_t buffer[65536];
+    size_t bytes_read;
+    size_t bytes_processed = 0;
+
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0)
+    {
+        if (hash_256 != NULL)
+        {
+            STREEBOG_NAMESPACE(update)(&ctx_256, buffer, bytes_read);
+        }
+        if (hash_512 != NULL)
+        {
+            STREEBOG_NAMESPACE(update)(&ctx_512, buffer, bytes_read);
+        }
+
+        bytes_processed += bytes_read;
+
+        if (progress_callback != NULL)
+        {
+            progress_callback(bytes_processed, (size_t)file_size, user_data);
+        }
+    }
+
+    if (ferror(file))
+    {
+        fclose(file);
+        return -2;
+    }
+
+    fclose(file);
+
+    if (hash_256 != NULL)
+    {
+        STREEBOG_NAMESPACE(final)(&ctx_256, hash_256);
+    }
+    if (hash_512 != NULL)
+    {
+        STREEBOG_NAMESPACE(final)(&ctx_512, hash_512);
+    }
+
+    return 0;
 }
