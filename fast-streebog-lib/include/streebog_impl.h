@@ -110,6 +110,8 @@ static const uint8_t STREEBOG_C[12][64] = {
      0xfa, 0xf4, 0x17, 0xd5, 0xd9, 0xb2, 0x1b, 0x99, 0x48, 0xbc, 0x92, 0x4a, 0xf1, 0x1b, 0xd7, 0x20}};
 
 // ==================== Helper functions ====================
+// Note: Some inline functions here have non-inline exported versions in fast_streebog.c
+// for ARM64 ASM linkage (streebog_l_transform_c, streebog_key_schedule_c)
 
 static inline uint64_t streebog_bytes_to_u64_be(const uint8_t *bytes)
 {
@@ -185,7 +187,6 @@ static inline void streebog_p_transform_c(const uint8_t *state, uint8_t *out)
 // Optimized L-transform using precalculated lookup tables
 // Instead of bit-by-bit XOR (up to 64 operations per block),
 // we use 8 table lookups and 7 XOR operations per block
-// Note: Non-static version is defined in fast_streebog.c for ARM64 ASM linkage
 static inline void streebog_l_transform_c_inline(const uint8_t *state, uint8_t *out)
 {
     for (int i = 0; i < 8; i++)
@@ -208,7 +209,6 @@ static inline void streebog_l_transform_c_inline(const uint8_t *state, uint8_t *
     }
 }
 
-// Note: Non-static version is defined in fast_streebog.c for ARM64 ASM linkage
 static inline void streebog_key_schedule_c_inline(const uint8_t *K, int i, uint8_t *out)
 {
     uint8_t temp[64];

@@ -63,16 +63,23 @@ class PerformanceTest : public ::testing::Test
     // Run OpenSSL command and measure time
     double runOpenSSLBenchmark(const std::string &algorithm, int iterations = 3)
     {
-#ifdef _WIN32
         // Check if openssl is available
+#ifdef _WIN32
         if (system("where openssl >nul 2>&1") != 0)
+#else
+        if (system("which openssl >/dev/null 2>&1") != 0)
+#endif
         {
             std::cout << "[WARNING] OpenSSL not found in PATH\n";
             return -1.0;
         }
 
         double totalMs = 0.0;
+#ifdef _WIN32
         std::string command = "openssl dgst -" + algorithm + " \"" + testFilePath + "\" >nul 2>&1";
+#else
+        std::string command = "openssl dgst -" + algorithm + " \"" + testFilePath + "\" >/dev/null 2>&1";
+#endif
 
         for (int i = 0; i < iterations; ++i)
         {
@@ -84,9 +91,6 @@ class PerformanceTest : public ::testing::Test
         }
 
         return totalMs / iterations;
-#else
-        return -1.0;
-#endif
     }
 };
 
