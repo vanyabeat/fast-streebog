@@ -13,24 +13,53 @@ message(STATUS "Building fast-streebog version: ${STREEBOG_VERSION}")
 # Option to build shared library (DLL)
 option(BUILD_SHARED_LIBS "Build shared library (DLL on Windows)" OFF)
 
-# ASM source files for Windows x64
-# Only low-level primitives - e_transform and g_n use C implementations
-set(ASM_SOURCES
-    windows_x64/streebog_xor_512.asm
-    windows_x64/streebog_add_512.asm
-    windows_x64/streebog_s_transform.asm
-    windows_x64/streebog_p_transform.asm
-    windows_x64/streebog_l_transform.asm
-    windows_x64/streebog_key_schedule.asm
-)
+# Option to use ASM optimizations
+option(USE_ASM "Use assembly optimizations when available" ON)
+
+# Detect platform and set ASM sources
+set(ASM_SOURCES "")
+set(USE_PLATFORM_ASM OFF)
+
+if(USE_ASM)
+    # Windows x64 with MSVC - use MASM
+    if(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(ASM_SOURCES
+            windows_x64/streebog_xor_512.asm
+            windows_x64/streebog_add_512.asm
+            windows_x64/streebog_s_transform.asm
+            windows_x64/streebog_p_transform.asm
+            windows_x64/streebog_l_transform.asm
+            windows_x64/streebog_key_schedule.asm
+        )
+        set(USE_PLATFORM_ASM ON)
+        message(STATUS "Using Windows x64 MASM optimizations")
+    # Unix ARM64 (Linux, macOS, BSD) - use GAS (GNU Assembler syntax)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+        set(ASM_SOURCES
+            unix_arm64/streebog_xor_512.S
+            unix_arm64/streebog_add_512.S
+            unix_arm64/streebog_s_transform.S
+            unix_arm64/streebog_p_transform.S
+            unix_arm64/streebog_l_transform.S
+            unix_arm64/streebog_key_schedule.S
+            unix_arm64/streebog_precalc_tables.S
+            unix_arm64/streebog_constants.S
+        )
+        set(USE_PLATFORM_ASM ON)
+        message(STATUS "Using ARM64 NEON optimizations (Unix)")
+    else()
+        message(STATUS "No ASM optimizations available for this platform, using C implementation")
+    endif()
+endif()
 
 # ==================== Static Library ====================
 add_library(fast-streebog-lib STATIC
     src/fast_streebog.c
 )
 
-if (MSVC)
+if(USE_PLATFORM_ASM)
     target_sources(fast-streebog-lib PRIVATE ${ASM_SOURCES})
+    target_compile_definitions(fast-streebog-lib PRIVATE STREEBOG_USE_ASM)
 endif()
 
 target_include_directories(fast-streebog-lib PUBLIC
@@ -57,8 +86,9 @@ target_compile_definitions(fast-streebog-dll PRIVATE
     STREEBOG_VERSION="${STREEBOG_VERSION}"
 )
 
-if (MSVC)
+if(USE_PLATFORM_ASM)
     target_sources(fast-streebog-dll PRIVATE ${ASM_SOURCES})
+    target_compile_definitions(fast-streebog-dll PRIVATE STREEBOG_USE_ASM)
 endif()
 
 target_include_directories(fast-streebog-dll PUBLIC
@@ -78,15 +108,27 @@ else()
     target_compile_options(fast-streebog-dll PRIVATE -Wall -Wextra -fvisibility=hidden)
 endif()
 
-# ==================== MASM Configuration for Windows ====================
-if(MSVC)
-    enable_language(ASM_MASM)
-    foreach(asm_file ${ASM_SOURCES})
-        set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
-    endforeach()
-    set(CMAKE_ASM_MASM_FLAGS_DEBUG "/Zi")
-    target_compile_options(fast-streebog-lib PRIVATE /Zi)
-    target_compile_options(fast-streebog-dll PRIVATE /Zi)
+# ==================== ASM Configuration ====================
+if(USE_PLATFORM_ASM)
+    if(MSVC)
+        # Windows: MASM Configuration
+        enable_language(ASM_MASM)
+        foreach(asm_file ${ASM_SOURCES})
+            set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
+        endforeach()
+        set(CMAKE_ASM_MASM_FLAGS_DEBUG "/Zi")
+        target_compile_options(fast-streebog-lib PRIVATE /Zi)
+        target_compile_options(fast-streebog-dll PRIVATE /Zi)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+        # ARM64: GAS (GNU Assembler) Configuration
+        enable_language(ASM)
+        foreach(asm_file ${ASM_SOURCES})
+            set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM)
+        endforeach()
+        # Enable ARM64 optimizations
+        target_compile_options(fast-streebog-lib PRIVATE -march=armv8-a+crypto)
+        target_compile_options(fast-streebog-dll PRIVATE -march=armv8-a+crypto)
+    endif()
 endif()
 
 # ==================== Release Distribution ====================

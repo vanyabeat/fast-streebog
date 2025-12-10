@@ -14,8 +14,71 @@ STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void)
     return STREEBOG_VERSION;
 }
 
-// ==================== Low-level functions (C implementations for non-MSVC) ====================
-#ifndef _MSC_VER
+// ==================== Exported C implementations for ASM wrappers ====================
+// These are used by ARM64 ASM when it needs to call complex C functions
+// Non-inline versions for external linkage
+
+// Helper for L-transform
+static void u64_to_bytes_be(uint64_t val, uint8_t *bytes)
+{
+    bytes[0] = (uint8_t)(val >> 56);
+    bytes[1] = (uint8_t)(val >> 48);
+    bytes[2] = (uint8_t)(val >> 40);
+    bytes[3] = (uint8_t)(val >> 32);
+    bytes[4] = (uint8_t)(val >> 24);
+    bytes[5] = (uint8_t)(val >> 16);
+    bytes[6] = (uint8_t)(val >> 8);
+    bytes[7] = (uint8_t)(val);
+}
+
+void streebog_l_transform_c(const uint8_t *state, uint8_t *out)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        const uint8_t *block = state + i * 8;
+        uint64_t result = STREEBOG_Ax[0][block[0]];
+        result ^= STREEBOG_Ax[1][block[1]];
+        result ^= STREEBOG_Ax[2][block[2]];
+        result ^= STREEBOG_Ax[3][block[3]];
+        result ^= STREEBOG_Ax[4][block[4]];
+        result ^= STREEBOG_Ax[5][block[5]];
+        result ^= STREEBOG_Ax[6][block[6]];
+        result ^= STREEBOG_Ax[7][block[7]];
+        u64_to_bytes_be(result, out + i * 8);
+    }
+}
+
+void streebog_key_schedule_c(const uint8_t *K, int i, uint8_t *out)
+{
+    uint8_t temp[64];
+    
+    // temp = K ^ C[i]
+    for (int j = 0; j < 64; j++)
+    {
+        temp[j] = K[j] ^ STREEBOG_C[i][j];
+    }
+    
+    // temp = S(temp)
+    for (int j = 0; j < 64; j++)
+    {
+        temp[j] = STREEBOG_SBOX[temp[j]];
+    }
+    
+    // temp = P(temp)
+    uint8_t temp2[64];
+    for (int j = 0; j < 64; j++)
+    {
+        temp2[j] = temp[STREEBOG_TAU[j]];
+    }
+    
+    // out = L(temp)
+    streebog_l_transform_c(temp2, out);
+}
+
+// ==================== Low-level functions ====================
+// If STREEBOG_USE_ASM is defined, ASM implementations are linked externally (from .asm or .S files)
+// Otherwise, use C implementations
+#ifndef STREEBOG_USE_ASM
 
 void STREEBOG_NAMESPACE(xor_512)(const uint8_t *a, const uint8_t *b, uint8_t *out)
 {
@@ -47,7 +110,7 @@ void STREEBOG_NAMESPACE(key_schedule)(const uint8_t *K, int i, uint8_t *out)
     streebog_key_schedule_c(K, i, out);
 }
 
-#endif // !_MSC_VER
+#endif // !STREEBOG_USE_ASM
 
 // E transformation: E(K, m)
 // Performs 12 rounds of S->P->L->KeySchedule->XOR

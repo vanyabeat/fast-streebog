@@ -185,7 +185,8 @@ static inline void streebog_p_transform_c(const uint8_t *state, uint8_t *out)
 // Optimized L-transform using precalculated lookup tables
 // Instead of bit-by-bit XOR (up to 64 operations per block),
 // we use 8 table lookups and 7 XOR operations per block
-static inline void streebog_l_transform_c(const uint8_t *state, uint8_t *out)
+// Note: Non-static version is defined in fast_streebog.c for ARM64 ASM linkage
+static inline void streebog_l_transform_c_inline(const uint8_t *state, uint8_t *out)
 {
     for (int i = 0; i < 8; i++)
     {
@@ -207,7 +208,8 @@ static inline void streebog_l_transform_c(const uint8_t *state, uint8_t *out)
     }
 }
 
-static inline void streebog_key_schedule_c(const uint8_t *K, int i, uint8_t *out)
+// Note: Non-static version is defined in fast_streebog.c for ARM64 ASM linkage
+static inline void streebog_key_schedule_c_inline(const uint8_t *K, int i, uint8_t *out)
 {
     uint8_t temp[64];
 
@@ -221,7 +223,7 @@ static inline void streebog_key_schedule_c(const uint8_t *K, int i, uint8_t *out
     streebog_p_transform_c(temp, temp);
 
     // out = L(temp)
-    streebog_l_transform_c(temp, out);
+    streebog_l_transform_c_inline(temp, out);
 }
 
 static inline void streebog_e_transform_c(const uint8_t *K, const uint8_t *m, uint8_t *out)
@@ -245,10 +247,10 @@ static inline void streebog_e_transform_c(const uint8_t *K, const uint8_t *m, ui
         streebog_p_transform_c(state, state);
 
         // state = L(state)
-        streebog_l_transform_c(state, state);
+        streebog_l_transform_c_inline(state, state);
 
         // K = KeySchedule(K, i)
-        streebog_key_schedule_c(key, i, key);
+        streebog_key_schedule_c_inline(key, i, key);
 
         // state = state ^ K
         streebog_xor_512_c(state, key, state);
@@ -272,7 +274,7 @@ static inline void streebog_g_n_c(const uint8_t *N, const uint8_t *h, const uint
     streebog_p_transform_c(K, K);
 
     // K = L(K)
-    streebog_l_transform_c(K, K);
+    streebog_l_transform_c_inline(K, K);
 
     // t = E(K, m)
     streebog_e_transform_c(K, m, t);
