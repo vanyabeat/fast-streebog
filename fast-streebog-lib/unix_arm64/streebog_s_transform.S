@@ -1,6 +1,13 @@
+// macOS uses underscore prefix for C symbols, Linux does not
+#ifdef __APPLE__
+    #define SYMBOL(name) _##name
+#else
+    #define SYMBOL(name) name
+#endif
+
 .text
 .align 4
-.global _streebog_s_transform
+.global SYMBOL(streebog_s_transform)
 
 // S-box table (256 bytes)
 .align 4
@@ -38,7 +45,7 @@ STREEBOG_SBOX:
 .byte 0x59, 0xA6, 0x74, 0xD2, 0xE6, 0xF4, 0xB4, 0xC0
 .byte 0xD1, 0x66, 0xAF, 0xC2, 0x39, 0x4B, 0x63, 0xB6
 
-_streebog_s_transform:
+SYMBOL(streebog_s_transform):
     // x0 = state (input pointer)
     // x1 = out (output pointer)
     

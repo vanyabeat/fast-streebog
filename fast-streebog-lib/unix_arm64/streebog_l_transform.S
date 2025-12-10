@@ -1,8 +1,15 @@
+// macOS uses underscore prefix for C symbols, Linux does not
+#ifdef __APPLE__
+    #define SYMBOL(name) _##name
+#else
+    #define SYMBOL(name) name
+#endif
+
 .text
 .align 4
-.global _streebog_l_transform
+.global SYMBOL(streebog_l_transform)
 
-_streebog_l_transform:
+SYMBOL(streebog_l_transform):
     // x0 = state (input pointer)
     // x1 = out (output pointer)
     

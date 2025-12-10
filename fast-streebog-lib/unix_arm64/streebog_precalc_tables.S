@@ -1,9 +1,15 @@
+// macOS uses underscore prefix for C symbols, Linux does not
+#ifdef __APPLE__
+    #define SYMBOL(name) _##name
+#else
+    #define SYMBOL(name) name
+#endif
 .data
 .align 4
 
 // Column 0 (byte offset 0)
-.global _Ax_COL0
-_Ax_COL0:
+.global SYMBOL(Ax_COL0)
+SYMBOL(Ax_COL0):
     .quad 0x0000000000000000
     .quad 0x83478b07b2468764
     .quad 0x1b8e0b0e798c13c8
@@ -326,8 +332,8 @@ _Ax_COL0:
 
 
 // Column 1 (byte offset 1)
-.global _Ax_COL1
-_Ax_COL1:
+.global SYMBOL(Ax_COL1)
+SYMBOL(Ax_COL1):
     .quad 0x0000000000000000
     .quad 0x46b60f011a83988e
     .quad 0x8c711e02341b2d01
@@ -650,8 +656,8 @@ _Ax_COL1:
 
 
 // Column 2 (byte offset 2)
-.global _Ax_COL2
-_Ax_COL2:
+.global SYMBOL(Ax_COL2)
+SYMBOL(Ax_COL2):
     .quad 0x0000000000000000
     .quad 0xaccc9ca9328a8950
     .quad 0x4585254f64090fa0
@@ -974,8 +980,8 @@ _Ax_COL2:
 
 
 // Column 3 (byte offset 3)
-.global _Ax_COL3
-_Ax_COL3:
+.global SYMBOL(Ax_COL3)
+SYMBOL(Ax_COL3):
     .quad 0x0000000000000000
     .quad 0x0321658cba93c138
     .quad 0x0642ca05693b9f70
@@ -1298,8 +1304,8 @@ _Ax_COL3:
 
 
 // Column 4 (byte offset 4)
-.global _Ax_COL4
-_Ax_COL4:
+.global SYMBOL(Ax_COL4)
+SYMBOL(Ax_COL4):
     .quad 0x0000000000000000
     .quad 0x5b068c651810a89e
     .quad 0xb60c05ca30204d21
@@ -1622,8 +1628,8 @@ _Ax_COL4:
 
 
 // Column 5 (byte offset 5)
-.global _Ax_COL5
-_Ax_COL5:
+.global SYMBOL(Ax_COL5)
+SYMBOL(Ax_COL5):
     .quad 0x0000000000000000
     .quad 0xf97d86d98a327728
     .quad 0xeffa11af0964ee50
@@ -1946,8 +1952,8 @@ _Ax_COL5:
 
 
 // Column 6 (byte offset 6)
-.global _Ax_COL6
-_Ax_COL6:
+.global SYMBOL(Ax_COL6)
+SYMBOL(Ax_COL6):
     .quad 0x0000000000000000
     .quad 0xa48b474f9ef5dc18
     .quad 0x550b8e9e21f7a530
@@ -2270,8 +2276,8 @@ _Ax_COL6:
 
 
 // Column 7 (byte offset 7)
-.global _Ax_COL7
-_Ax_COL7:
+.global SYMBOL(Ax_COL7)
+SYMBOL(Ax_COL7):
     .quad 0x0000000000000000
     .quad 0x641c314b2b8ee083
     .quad 0xc83862965601dd1b

@@ -1,6 +1,13 @@
+// macOS uses underscore prefix for C symbols, Linux does not
+#ifdef __APPLE__
+    #define SYMBOL(name) _##name
+#else
+    #define SYMBOL(name) name
+#endif
+
 .text
 .align 4
-.global _streebog_p_transform
+.global SYMBOL(streebog_p_transform)
 
 // TAU permutation table (64 bytes)
 .align 4
@@ -14,7 +21,7 @@ STREEBOG_TAU:
 .byte  6, 14, 22, 30, 38, 46, 54, 62
 .byte  7, 15, 23, 31, 39, 47, 55, 63
 
-_streebog_p_transform:
+SYMBOL(streebog_p_transform):
     // x0 = state (input pointer)
     // x1 = out (output pointer)
     
