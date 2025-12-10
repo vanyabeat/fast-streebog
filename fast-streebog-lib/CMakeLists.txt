@@ -13,15 +13,15 @@ message(STATUS "Building fast-streebog version: ${STREEBOG_VERSION}")
 # Option to build shared library (DLL)
 option(BUILD_SHARED_LIBS "Build shared library (DLL on Windows)" OFF)
 
-# ASM source files for Windows
+# ASM source files for Windows x64
 # Only low-level primitives - e_transform and g_n use C implementations
 set(ASM_SOURCES
-    windows/streebog_xor_512.asm
-    windows/streebog_add_512.asm
-    windows/streebog_s_transform.asm
-    windows/streebog_p_transform.asm
-    windows/streebog_l_transform.asm
-    windows/streebog_key_schedule.asm
+    windows_x64/streebog_xor_512.asm
+    windows_x64/streebog_add_512.asm
+    windows_x64/streebog_s_transform.asm
+    windows_x64/streebog_p_transform.asm
+    windows_x64/streebog_l_transform.asm
+    windows_x64/streebog_key_schedule.asm
 )
 
 # ==================== Static Library ====================
@@ -89,10 +89,10 @@ if(MSVC)
     target_compile_options(fast-streebog-dll PRIVATE /Zi)
 endif()
 
-# ==================== Release Distribution (Windows) ====================
+# ==================== Release Distribution ====================
 # Only create release distribution when building standalone
 if(NOT FAST_STREEBOG_AS_SUBDIR)
-    set(RELEASE_DIR "${CMAKE_SOURCE_DIR}/streebog_windows")
+    set(RELEASE_DIR "${CMAKE_SOURCE_DIR}/streebog_release")
 
     # Copy DLL, import library, static library and header to release folder after build
     add_custom_command(TARGET fast-streebog-dll POST_BUILD
@@ -105,11 +105,11 @@ if(NOT FAST_STREEBOG_AS_SUBDIR)
             "${RELEASE_DIR}/"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:fast-streebog-lib>"
-            "${RELEASE_DIR}/fast-streebog-static.lib"
+            "${RELEASE_DIR}/"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/dist/streebog.h"
             "${RELEASE_DIR}/"
-        COMMENT "Copying DLL, static library, import library and header to streebog_windows folder"
+        COMMENT "Copying libraries and header to streebog_release folder"
     )
 endif()
 

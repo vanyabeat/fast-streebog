@@ -1,4 +1,5 @@
 #include "fast_streebog.h"
+#include "streebog_impl.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,41 @@ STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void)
 {
     return STREEBOG_VERSION;
 }
+
+// ==================== Low-level functions (C implementations for non-MSVC) ====================
+#ifndef _MSC_VER
+
+void STREEBOG_NAMESPACE(xor_512)(const uint8_t *a, const uint8_t *b, uint8_t *out)
+{
+    streebog_xor_512_c(a, b, out);
+}
+
+void STREEBOG_NAMESPACE(add_512)(const uint8_t *a, const uint8_t *b, uint8_t *out)
+{
+    streebog_add_512_c(a, b, out);
+}
+
+void STREEBOG_NAMESPACE(s_transform)(const uint8_t *state, uint8_t *out)
+{
+    streebog_s_transform_c(state, out);
+}
+
+void STREEBOG_NAMESPACE(p_transform)(const uint8_t *state, uint8_t *out)
+{
+    streebog_p_transform_c(state, out);
+}
+
+void STREEBOG_NAMESPACE(l_transform)(const uint8_t *state, uint8_t *out)
+{
+    streebog_l_transform_c(state, out);
+}
+
+void STREEBOG_NAMESPACE(key_schedule)(const uint8_t *K, int i, uint8_t *out)
+{
+    streebog_key_schedule_c(K, i, out);
+}
+
+#endif // !_MSC_VER
 
 // E transformation: E(K, m)
 // Performs 12 rounds of S->P->L->KeySchedule->XOR
