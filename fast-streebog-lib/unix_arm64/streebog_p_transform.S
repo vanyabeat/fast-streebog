@@ -9,57 +9,43 @@
 .align 4
 .global SYMBOL(streebog_p_transform)
 
-// TAU permutation table (64 bytes)
+// TAU permutation indices for NEON tbl instruction
+// Split into 4 parts of 16 bytes each for tbl2 operations
 .align 4
-STREEBOG_TAU:
-.byte  0,  8, 16, 24, 32, 40, 48, 56
-.byte  1,  9, 17, 25, 33, 41, 49, 57
-.byte  2, 10, 18, 26, 34, 42, 50, 58
-.byte  3, 11, 19, 27, 35, 43, 51, 59
-.byte  4, 12, 20, 28, 36, 44, 52, 60
-.byte  5, 13, 21, 29, 37, 45, 53, 61
-.byte  6, 14, 22, 30, 38, 46, 54, 62
-.byte  7, 15, 23, 31, 39, 47, 55, 63
+TAU_IDX_0:  // Output bytes 0-15: which input bytes to take
+    .byte  0,  8, 16, 24, 32, 40, 48, 56   // from state positions
+    .byte  1,  9, 17, 25, 33, 41, 49, 57
+TAU_IDX_1:  // Output bytes 16-31
+    .byte  2, 10, 18, 26, 34, 42, 50, 58
+    .byte  3, 11, 19, 27, 35, 43, 51, 59
+TAU_IDX_2:  // Output bytes 32-47
+    .byte  4, 12, 20, 28, 36, 44, 52, 60
+    .byte  5, 13, 21, 29, 37, 45, 53, 61
+TAU_IDX_3:  // Output bytes 48-63
+    .byte  6, 14, 22, 30, 38, 46, 54, 62
+    .byte  7, 15, 23, 31, 39, 47, 55, 63
 
+// Optimized P-transform using NEON tbl instruction
+// void streebog_p_transform(const uint8_t *state, uint8_t *out)
 SYMBOL(streebog_p_transform):
-    // x0 = state (input pointer)
-    // x1 = out (output pointer)
+    // x0 = state (input), x1 = out (output)
     
-    // Allocate 64 bytes on stack for temporary buffer
-    sub     sp, sp, #80         // Allocate 80 bytes (64 + 16 for alignment)
+    // Load all 64 input bytes into v0-v3 (4 x 16 bytes)
+    ld1     {v0.16b, v1.16b, v2.16b, v3.16b}, [x0]
     
-    // Save frame pointer
-    stp     x29, x30, [sp, #64]
-    add     x29, sp, #64
+    // Load TAU permutation indices
+    adrp    x2, TAU_IDX_0@PAGE
+    add     x2, x2, TAU_IDX_0@PAGEOFF
+    ld1     {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
     
-    // Get address of TAU table
-    adrp    x2, STREEBOG_TAU@PAGE
-    add     x2, x2, STREEBOG_TAU@PAGEOFF
+    // Perform table lookups for each output block
+    // tbl with 4 source registers can index into 64 bytes (0-63)
+    tbl     v20.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v16.16b  // out[0-15]
+    tbl     v21.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v17.16b  // out[16-31]
+    tbl     v22.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v18.16b  // out[32-47]
+    tbl     v23.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v19.16b  // out[48-63]
     
-    // Use sp as temporary output buffer
-    mov     x3, sp              // x3 = temp buffer
-    mov     x4, #64             // Counter
-    mov     x5, x2              // Save TAU pointer
-    
-.Lperm_loop:
-    ldrb    w6, [x2], #1        // Load permutation index from TAU
-    ldrb    w7, [x0, w6, uxtw]  // Load byte from state[TAU[i]]
-    strb    w7, [x3], #1        // Store to temp buffer
-    subs    x4, x4, #1          // Decrement counter
-    b.ne    .Lperm_loop         // Loop if not zero
-    
-    // Copy from temp buffer to output
-    mov     x3, sp              // Reset temp buffer pointer
-    mov     x4, #64             // Reset counter
-    
-.Lcopy_loop:
-    ldrb    w6, [x3], #1        // Load from temp
-    strb    w6, [x1], #1        // Store to output
-    subs    x4, x4, #1          // Decrement counter
-    b.ne    .Lcopy_loop         // Loop if not zero
-    
-    // Restore frame pointer and deallocate stack
-    ldp     x29, x30, [sp, #64]
-    add     sp, sp, #80
+    // Store all 64 output bytes
+    st1     {v20.16b, v21.16b, v22.16b, v23.16b}, [x1]
     
     ret

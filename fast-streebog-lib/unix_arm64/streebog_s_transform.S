@@ -45,22 +45,231 @@ STREEBOG_SBOX:
 .byte 0x59, 0xA6, 0x74, 0xD2, 0xE6, 0xF4, 0xB4, 0xC0
 .byte 0xD1, 0x66, 0xAF, 0xC2, 0x39, 0x4B, 0x63, 0xB6
 
+// Optimized S-transform: process 8 bytes at a time
+// void streebog_s_transform(const uint8_t *state, uint8_t *out)
 SYMBOL(streebog_s_transform):
-    // x0 = state (input pointer)
-    // x1 = out (output pointer)
+    // x0 = state (input), x1 = out (output)
     
     // Get address of S-box table
     adrp    x2, STREEBOG_SBOX@PAGE
     add     x2, x2, STREEBOG_SBOX@PAGEOFF
     
-    // Process 64 bytes
-    mov     x3, #64
+    // Process 64 bytes in 8 iterations of 8 bytes each (fully unrolled)
     
-.Lsbox_loop:
-    ldrb    w4, [x0], #1        // Load byte from state
-    ldrb    w4, [x2, w4, uxtw]  // Look up in S-box table
-    strb    w4, [x1], #1        // Store to output
-    subs    x3, x3, #1          // Decrement counter
-    b.ne    .Lsbox_loop         // Loop if not zero
+    // === Bytes 0-7 ===
+    ldr     x3, [x0, #0]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #0]
+    
+    // === Bytes 8-15 ===
+    ldr     x3, [x0, #8]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #8]
+    
+    // === Bytes 16-23 ===
+    ldr     x3, [x0, #16]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #16]
+    
+    // === Bytes 24-31 ===
+    ldr     x3, [x0, #24]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #24]
+    
+    // === Bytes 32-39 ===
+    ldr     x3, [x0, #32]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #32]
+    
+    // === Bytes 40-47 ===
+    ldr     x3, [x0, #40]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #40]
+    
+    // === Bytes 48-55 ===
+    ldr     x3, [x0, #48]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #48]
+    
+    // === Bytes 56-63 ===
+    ldr     x3, [x0, #56]
+    and     x4, x3, #0xFF
+    ldrb    w4, [x2, x4]
+    ubfx    x5, x3, #8, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #8
+    ubfx    x5, x3, #16, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #16
+    ubfx    x5, x3, #24, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #24
+    ubfx    x5, x3, #32, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #32
+    ubfx    x5, x3, #40, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #40
+    ubfx    x5, x3, #48, #8
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #48
+    lsr     x5, x3, #56
+    ldrb    w5, [x2, x5]
+    orr     x4, x4, x5, lsl #56
+    str     x4, [x1, #56]
     
     ret
