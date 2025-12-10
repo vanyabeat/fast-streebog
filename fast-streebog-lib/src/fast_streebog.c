@@ -4,6 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#define BSWAP64(x) _byteswap_uint64(x)
+#else
+#define BSWAP64(x) __builtin_bswap64(x)
+#endif
+
 // Library version - injected by CMake from VERSION file
 #ifndef STREEBOG_VERSION
 #define STREEBOG_VERSION "unknown"
@@ -14,23 +21,6 @@ STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void)
     return STREEBOG_VERSION;
 }
 
-// ==================== Exported C implementations for ASM wrappers ====================
-// These are used by ARM64 ASM when it needs to call complex C functions
-// Non-inline versions for external linkage
-
-void STREEBOG_NAMESPACE(l_transform_c)(const uint8_t *state, uint8_t *out)
-{
-    streebog_l_transform_c_inline(state, out);
-}
-
-void STREEBOG_NAMESPACE(key_schedule_c)(const uint8_t *K, int i, uint8_t *out)
-{
-    streebog_key_schedule_c_inline(K, i, out);
-}
-
-// ==================== Low-level functions ====================
-// If STREEBOG_USE_ASM is defined, ASM implementations are linked externally (from .asm or .S files)
-// Otherwise, use C implementations
 #ifndef STREEBOG_USE_ASM
 
 void STREEBOG_NAMESPACE(xor_512)(const uint8_t *a, const uint8_t *b, uint8_t *out)
@@ -63,6 +53,15 @@ void STREEBOG_NAMESPACE(key_schedule)(const uint8_t *K, int i, uint8_t *out)
     streebog_key_schedule_c(K, i, out);
 }
 
+void STREEBOG_NAMESPACE(l_transform_c)(const uint8_t *state, uint8_t *out)
+{
+    streebog_l_transform_c_inline(state, out);
+}
+
+void STREEBOG_NAMESPACE(key_schedule_c)(const uint8_t *K, int i, uint8_t *out)
+{
+    streebog_key_schedule_c_inline(K, i, out);
+}
 #endif // !STREEBOG_USE_ASM
 
 // E transformation: E(K, m)
@@ -258,15 +257,9 @@ void STREEBOG_NAMESPACE(final)(streebog_ctx *ctx, uint8_t *out)
     STREEBOG_NAMESPACE(g_n)(ctx->N, ctx->h, padded, ctx->h);
 
     // N = (N + |M|) mod 2^512, where |M| is message length in bits
-    // Convert msg_bits to big-endian 64-byte representation
-    len_bytes[63] = (uint8_t)(msg_bits & 0xFF);
-    len_bytes[62] = (uint8_t)((msg_bits >> 8) & 0xFF);
-    len_bytes[61] = (uint8_t)((msg_bits >> 16) & 0xFF);
-    len_bytes[60] = (uint8_t)((msg_bits >> 24) & 0xFF);
-    len_bytes[59] = (uint8_t)((msg_bits >> 32) & 0xFF);
-    len_bytes[58] = (uint8_t)((msg_bits >> 40) & 0xFF);
-    len_bytes[57] = (uint8_t)((msg_bits >> 48) & 0xFF);
-    len_bytes[56] = (uint8_t)((msg_bits >> 56) & 0xFF);
+    // Store msg_bits as big-endian 64-bit value at offset 56
+    // Using byte swap intrinsic - compiles to single BSWAP instruction
+    *(uint64_t *)(len_bytes + 56) = BSWAP64((uint64_t)msg_bits);
 
     STREEBOG_NAMESPACE(add_512)(ctx->N, len_bytes, ctx->N);
 
