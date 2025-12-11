@@ -45,20 +45,10 @@ void STREEBOG_NAMESPACE(p_transform)(const uint8_t *state, uint8_t *out)
 
 void STREEBOG_NAMESPACE(l_transform)(const uint8_t *state, uint8_t *out)
 {
-    streebog_l_transform_c(state, out);
-}
-
-void STREEBOG_NAMESPACE(key_schedule)(const uint8_t *K, int i, uint8_t *out)
-{
-    streebog_key_schedule_c(K, i, out);
-}
-
-void STREEBOG_NAMESPACE(l_transform_c)(const uint8_t *state, uint8_t *out)
-{
     streebog_l_transform_c_inline(state, out);
 }
 
-void STREEBOG_NAMESPACE(key_schedule_c)(const uint8_t *K, int i, uint8_t *out)
+void STREEBOG_NAMESPACE(key_schedule)(const uint8_t *K, int i, uint8_t *out)
 {
     streebog_key_schedule_c_inline(K, i, out);
 }

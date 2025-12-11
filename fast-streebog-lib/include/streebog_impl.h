@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "fast_macros.h"
+
 // Include precalculated tables for optimized L-transform
 #include "streebog_precalc.h"
 
@@ -113,14 +115,14 @@ static const uint8_t STREEBOG_C[12][64] = {
 // Note: Some inline functions here have non-inline exported versions in fast_streebog.c
 // for ARM64 ASM linkage (streebog_l_transform_c, streebog_key_schedule_c)
 
-static inline uint64_t streebog_bytes_to_u64_be(const uint8_t *bytes)
+static inline uint64_t STREEBOG_NAMESPACE(bytes_to_u64_be)(const uint8_t *bytes)
 {
     return ((uint64_t)bytes[0] << 56) | ((uint64_t)bytes[1] << 48) | ((uint64_t)bytes[2] << 40) |
            ((uint64_t)bytes[3] << 32) | ((uint64_t)bytes[4] << 24) | ((uint64_t)bytes[5] << 16) |
            ((uint64_t)bytes[6] << 8) | ((uint64_t)bytes[7]);
 }
 
-static inline void streebog_u64_to_bytes_be(uint64_t val, uint8_t *bytes)
+static inline void STREEBOG_NAMESPACE(u64_to_bytes_be)(uint64_t val, uint8_t *bytes)
 {
     bytes[0] = (uint8_t)(val >> 56);
     bytes[1] = (uint8_t)(val >> 48);
@@ -132,7 +134,7 @@ static inline void streebog_u64_to_bytes_be(uint64_t val, uint8_t *bytes)
     bytes[7] = (uint8_t)(val);
 }
 
-static inline uint64_t streebog_l_mul64(uint64_t x)
+static inline uint64_t STREEBOG_NAMESPACE(l_mul64)(uint64_t x)
 {
     uint64_t result = 0;
     for (int i = 0; i < 64; i++)
@@ -147,7 +149,7 @@ static inline uint64_t streebog_l_mul64(uint64_t x)
 
 // ==================== C implementations ====================
 
-static inline void streebog_xor_512_c(const uint8_t *a, const uint8_t *b, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(xor_512_c)(const uint8_t *a, const uint8_t *b, uint8_t *out)
 {
     for (int i = 0; i < 64; i++)
     {
@@ -155,7 +157,7 @@ static inline void streebog_xor_512_c(const uint8_t *a, const uint8_t *b, uint8_
     }
 }
 
-static inline void streebog_add_512_c(const uint8_t *a, const uint8_t *b, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(add_512_c)(const uint8_t *a, const uint8_t *b, uint8_t *out)
 {
     uint16_t carry = 0;
     for (int i = 63; i >= 0; i--)
@@ -166,7 +168,7 @@ static inline void streebog_add_512_c(const uint8_t *a, const uint8_t *b, uint8_
     }
 }
 
-static inline void streebog_s_transform_c(const uint8_t *state, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(s_transform_c)(const uint8_t *state, uint8_t *out)
 {
     for (int i = 0; i < 64; i++)
     {
@@ -174,7 +176,7 @@ static inline void streebog_s_transform_c(const uint8_t *state, uint8_t *out)
     }
 }
 
-static inline void streebog_p_transform_c(const uint8_t *state, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(p_transform_c)(const uint8_t *state, uint8_t *out)
 {
     uint8_t temp[64];
     for (int i = 0; i < 64; i++)
@@ -187,7 +189,7 @@ static inline void streebog_p_transform_c(const uint8_t *state, uint8_t *out)
 // Optimized L-transform using precalculated lookup tables
 // Instead of bit-by-bit XOR (up to 64 operations per block),
 // we use 8 table lookups and 7 XOR operations per block
-static inline void streebog_l_transform_c_inline(const uint8_t *state, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(l_transform_c_inline)(const uint8_t *state, uint8_t *out)
 {
     for (int i = 0; i < 8; i++)
     {
@@ -209,24 +211,24 @@ static inline void streebog_l_transform_c_inline(const uint8_t *state, uint8_t *
     }
 }
 
-static inline void streebog_key_schedule_c_inline(const uint8_t *K, int i, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(key_schedule_c_inline)(const uint8_t *K, int i, uint8_t *out)
 {
     uint8_t temp[64];
 
     // temp = K ^ C[i]
-    streebog_xor_512_c(K, STREEBOG_C[i], temp);
+    STREEBOG_NAMESPACE(xor_512_c)(K, STREEBOG_C[i], temp);
 
     // temp = S(temp)
-    streebog_s_transform_c(temp, temp);
+    STREEBOG_NAMESPACE(s_transform_c)(temp, temp);
 
     // temp = P(temp)
-    streebog_p_transform_c(temp, temp);
+    STREEBOG_NAMESPACE(p_transform_c)(temp, temp);
 
     // out = L(temp)
-    streebog_l_transform_c_inline(temp, out);
+    STREEBOG_NAMESPACE(l_transform_c_inline)(temp, out);
 }
 
-static inline void streebog_e_transform_c(const uint8_t *K, const uint8_t *m, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(e_transform_c)(const uint8_t *K, const uint8_t *m, uint8_t *out)
 {
     uint8_t state[64];
     uint8_t key[64];
@@ -241,19 +243,19 @@ static inline void streebog_e_transform_c(const uint8_t *K, const uint8_t *m, ui
     for (int i = 0; i < 12; i++)
     {
         // state = S(state)
-        streebog_s_transform_c(state, state);
+        STREEBOG_NAMESPACE(s_transform_c)(state, state);
 
         // state = P(state)
-        streebog_p_transform_c(state, state);
+        STREEBOG_NAMESPACE(p_transform_c)(state, state);
 
         // state = L(state)
-        streebog_l_transform_c_inline(state, state);
+        STREEBOG_NAMESPACE(l_transform_c_inline)(state, state);
 
         // K = KeySchedule(K, i)
-        streebog_key_schedule_c_inline(key, i, key);
+        STREEBOG_NAMESPACE(key_schedule_c_inline)(key, i, key);
 
         // state = state ^ K
-        streebog_xor_512_c(state, key, state);
+        STREEBOG_NAMESPACE(xor_512_c)(state, key, state);
     }
 
     memcpy(out, state, 64);
@@ -265,25 +267,25 @@ static inline void streebog_g_n_c(const uint8_t *N, const uint8_t *h, const uint
     uint8_t t[64];
 
     // K = h ^ N
-    streebog_xor_512_c(h, N, K);
+    STREEBOG_NAMESPACE(xor_512_c)(h, N, K);
 
     // K = S(K)
-    streebog_s_transform_c(K, K);
+    STREEBOG_NAMESPACE(s_transform_c)(K, K);
 
     // K = P(K)
-    streebog_p_transform_c(K, K);
+    STREEBOG_NAMESPACE(p_transform_c)(K, K);
 
     // K = L(K)
-    streebog_l_transform_c_inline(K, K);
+    STREEBOG_NAMESPACE(l_transform_c_inline)(K, K);
 
     // t = E(K, m)
-    streebog_e_transform_c(K, m, t);
+    STREEBOG_NAMESPACE(e_transform_c)(K, m, t);
 
     // t = t ^ h
-    streebog_xor_512_c(t, h, t);
+    STREEBOG_NAMESPACE(xor_512_c)(t, h, t);
 
     // out = t ^ m
-    streebog_xor_512_c(t, m, out);
+    STREEBOG_NAMESPACE(xor_512_c)(t, m, out);
 }
 
 #endif // STREEBOG_IMPL_H
