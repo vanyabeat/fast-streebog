@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* DLL export/import macros */
+/* DLL/dylib export/import macros */
 #ifdef _WIN32
 #ifdef STREEBOG_BUILD_DLL
 #define STREEBOG_API __declspec(dllexport)
@@ -36,12 +36,14 @@
 #else
 #define STREEBOG_API
 #endif
-#else
-#if defined(__GNUC__) && __GNUC__ >= 4
+#elif defined(__APPLE__) || defined(__linux__)
+#if defined(STREEBOG_BUILD_DLL) || defined(STREEBOG_USE_DLL)
 #define STREEBOG_API __attribute__((visibility("default")))
 #else
 #define STREEBOG_API
 #endif
+#else
+#define STREEBOG_API
 #endif
 
 #ifdef __cplusplus

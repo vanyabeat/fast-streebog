@@ -6,12 +6,16 @@
 // macOS uses underscore prefix for C symbols, Linux does not
 #ifdef __APPLE__
     #define SYMBOL(name) _##name
+    // Private symbols are not exported from dylib
+    #define PRIVATE_GLOBAL .private_extern
 #else
     #define SYMBOL(name) name
+    #define PRIVATE_GLOBAL .hidden
 #endif
 
 .text
 .align 4
+PRIVATE_GLOBAL SYMBOL(streebog_xor_512)
 .global SYMBOL(streebog_xor_512)
 
 SYMBOL(streebog_xor_512):

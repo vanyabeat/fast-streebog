@@ -100,12 +100,12 @@ set_target_properties(fast-streebog-dll PROPERTIES
     OUTPUT_NAME "fast-streebog"
     VERSION ${STREEBOG_VERSION}
     SOVERSION 1
+    C_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
 )
 
 if(MSVC)
     target_compile_options(fast-streebog-dll PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:/W4>)
-else()
-    target_compile_options(fast-streebog-dll PRIVATE -Wall -Wextra -fvisibility=hidden)
 endif()
 
 # ==================== ASM Configuration ====================

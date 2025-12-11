@@ -1,12 +1,14 @@
 // macOS uses underscore prefix for C symbols, Linux does not
 #ifdef __APPLE__
     #define SYMBOL(name) _##name
+    #define PRIVATE_GLOBAL .private_extern
     .macro load_table_address reg, table
         adrp    \reg, \table@PAGE
         add     \reg, \reg, \table@PAGEOFF
     .endm
 #else
     #define SYMBOL(name) name
+    #define PRIVATE_GLOBAL .hidden
     .macro load_table_address reg, table
         adrp    \reg, \table
         add     \reg, \reg, :lo12:\table
@@ -15,6 +17,7 @@
 
 .text
 .align 4
+PRIVATE_GLOBAL SYMBOL(streebog_l_transform)
 .global SYMBOL(streebog_l_transform)
 
 // Optimized L-transform using precalculated lookup tables

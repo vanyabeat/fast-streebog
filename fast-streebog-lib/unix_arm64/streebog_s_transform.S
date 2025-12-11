@@ -1,12 +1,15 @@
 // macOS uses underscore prefix for C symbols, Linux does not
 #ifdef __APPLE__
     #define SYMBOL(name) _##name
+    #define PRIVATE_GLOBAL .private_extern
 #else
     #define SYMBOL(name) name
+    #define PRIVATE_GLOBAL .hidden
 #endif
 
 .text
 .align 4
+PRIVATE_GLOBAL SYMBOL(streebog_s_transform)
 .global SYMBOL(streebog_s_transform)
 
 // S-box table (256 bytes)

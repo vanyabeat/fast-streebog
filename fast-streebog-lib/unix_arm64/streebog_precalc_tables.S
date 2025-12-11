@@ -1,13 +1,16 @@
 // macOS uses underscore prefix for C symbols, Linux does not
 #ifdef __APPLE__
     #define SYMBOL(name) _##name
+    #define PRIVATE_GLOBAL .private_extern
 #else
     #define SYMBOL(name) name
+    #define PRIVATE_GLOBAL .hidden
 #endif
 .data
 .align 4
 
 // Column 0 (byte offset 0)
+PRIVATE_GLOBAL SYMBOL(Ax_COL0)
 .global SYMBOL(Ax_COL0)
 SYMBOL(Ax_COL0):
     .quad 0x0000000000000000
@@ -330,8 +333,8 @@ SYMBOL(Ax_COL0):
     .quad 0xfdb15ec0ee4f2218
     .quad 0x7ef6d5c75c09a57c
 
-
 // Column 1 (byte offset 1)
+PRIVATE_GLOBAL SYMBOL(Ax_COL1)
 .global SYMBOL(Ax_COL1)
 SYMBOL(Ax_COL1):
     .quad 0x0000000000000000
@@ -654,8 +657,8 @@ SYMBOL(Ax_COL1):
     .quad 0x4f3163fe19fd1a7f
     .quad 0x09876cff037e82f1
 
-
 // Column 2 (byte offset 2)
+PRIVATE_GLOBAL SYMBOL(Ax_COL2)
 .global SYMBOL(Ax_COL2)
 SYMBOL(Ax_COL2):
     .quad 0x0000000000000000
@@ -978,8 +981,8 @@ SYMBOL(Ax_COL2):
     .quad 0x28efc5090ca0bf2a
     .quad 0x842359a03e2a367a
 
-
 // Column 3 (byte offset 3)
+PRIVATE_GLOBAL SYMBOL(Ax_COL3)
 .global SYMBOL(Ax_COL3)
 SYMBOL(Ax_COL3):
     .quad 0x0000000000000000
@@ -1302,8 +1305,8 @@ SYMBOL(Ax_COL3):
     .quad 0x1f48e69e4da66d4e
     .quad 0x1c698312f735ac76
 
-
 // Column 4 (byte offset 4)
+PRIVATE_GLOBAL SYMBOL(Ax_COL4)
 .global SYMBOL(Ax_COL4)
 SYMBOL(Ax_COL4):
     .quad 0x0000000000000000
@@ -1626,8 +1629,8 @@ SYMBOL(Ax_COL4):
     .quad 0x963e9ee6f85bf724
     .quad 0xcd381283e04b5fba
 
-
 // Column 5 (byte offset 5)
+PRIVATE_GLOBAL SYMBOL(Ax_COL5)
 .global SYMBOL(Ax_COL5)
 SYMBOL(Ax_COL5):
     .quad 0x0000000000000000
@@ -1950,8 +1953,8 @@ SYMBOL(Ax_COL5):
     .quad 0x231edc95a00c5c15
     .quad 0xda635a4c2a3e2b3d
 
-
 // Column 6 (byte offset 6)
+PRIVATE_GLOBAL SYMBOL(Ax_COL6)
 .global SYMBOL(Ax_COL6)
 SYMBOL(Ax_COL6):
     .quad 0x0000000000000000
@@ -2274,8 +2277,8 @@ SYMBOL(Ax_COL6):
     .quad 0x8b5eb112245fb4f8
     .quad 0x2fd5f65dbaaa68e0
 
-
 // Column 7 (byte offset 7)
+PRIVATE_GLOBAL SYMBOL(Ax_COL7)
 .global SYMBOL(Ax_COL7)
 SYMBOL(Ax_COL7):
     .quad 0x0000000000000000

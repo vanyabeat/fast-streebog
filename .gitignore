@@ -47,3 +47,4 @@ streebog_windows/
 build_vs/
 build_c/
 streebog_release/
+.DS_Store

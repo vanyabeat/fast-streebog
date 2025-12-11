@@ -1,12 +1,15 @@
 // macOS uses underscore prefix for C symbols, Linux does not
 #ifdef __APPLE__
     #define SYMBOL(name) _##name
+    #define PRIVATE_GLOBAL .private_extern
 #else
     #define SYMBOL(name) name
+    #define PRIVATE_GLOBAL .hidden
 #endif
 
 .text
 .align 4
+PRIVATE_GLOBAL SYMBOL(streebog_add_512)
 .global SYMBOL(streebog_add_512)
 
 // Add two 512-bit big-endian numbers with carry propagation
