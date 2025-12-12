@@ -1,0 +1,207 @@
+name: Build and Release Multi-Platform
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from file
+        id: version
+        shell: pwsh
+        run: |
+          $version = Get-Content -Path VERSION -Raw
+          $version = $version.Trim()
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Building version: $version"
+
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configure CMake
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build Release DLL
+        run: cmake --build build --config Release --target fast-streebog-dll
+
+      - name: Verify build output
+        shell: pwsh
+        run: |
+          Write-Host "Contents of streebog_release:"
+          Get-ChildItem -Path streebog_release | Format-Table Name, Length
+
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          Compress-Archive -Path streebog_release\* -DestinationPath streebog_windows_x64.zip
+          Write-Host "Created streebog_windows_x64.zip"
+          Get-ChildItem streebog_windows_x64.zip | Format-Table Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: streebog_windows_x64
+          path: streebog_windows_x64.zip
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from file
+        id: version
+        shell: bash
+        run: |
+          version=$(cat VERSION | tr -d '[:space:]')
+          echo "VERSION=$version" >> $GITHUB_OUTPUT
+          echo "Building version: $version"
+
+      - name: Install dependencies
+        run: brew install cmake ninja
+
+      - name: Configure CMake
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Release libraries
+        run: cmake --build build --target fast-streebog-dll
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          echo "Contents of streebog_release:"
+          ls -lh streebog_release/
+
+      - name: Create ZIP archive
+        shell: bash
+        run: |
+          cd streebog_release
+          zip -r ../streebog_macos_universal.zip *
+          cd ..
+          echo "Created streebog_macos_universal.zip"
+          ls -lh streebog_macos_universal.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: streebog_macos_universal
+          path: streebog_macos_universal.zip
+
+  create-release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from file
+        id: version
+        shell: bash
+        run: |
+          version=$(cat VERSION | tr -d '[:space:]')
+          echo "VERSION=$version" >> $GITHUB_OUTPUT
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: streebog_windows_x64
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: streebog_macos_universal
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Fast Streebog v${{ steps.version.outputs.VERSION }}
+            
+            High-performance implementation of GOST R 34.11-2012 (Streebog) hash function with optimizations for multiple platforms.
+            
+            ### 📦 Downloads
+            
+            - **Windows x64**: `streebog_windows_x64.zip`
+            - **macOS Universal**: `streebog_macos_universal.zip`
+            
+            ### Windows x64 Package Contents
+            - `fast-streebog.dll` - Dynamic library (DLL)
+            - `fast-streebog.lib` - Import library for DLL linking
+            - `fast-streebog-static.lib` - Static library
+            - `streebog.h` - Header file
+            
+            ### macOS Package Contents
+            - `libfast-streebog.${{ steps.version.outputs.VERSION }}.dylib` - Versioned dynamic library
+            - `libfast-streebog.dylib` - Symbolic link to versioned library
+            - `libfast-streebog-lib.a` - Static library
+            - `streebog.h` - Header file
+            
+            ### 🚀 Performance
+            - **Windows x64 (ASM + Lookup Tables)**: 97.31 MB/s
+            - Pure C Implementation: 1.43 MB/s
+            - **Speedup: 68x**
+            
+            ### 💡 Usage Examples
+            
+            #### Windows (DLL)
+            ```c
+            #define STREEBOG_USE_DLL
+            #include "streebog.h"
+            
+            char hash[129];
+            streebog_hash_512_hex((const uint8_t*)"test", 4, hash);
+            printf("Hash: %s\n", hash);
+            printf("Version: %s\n", streebog_version());
+            ```
+            
+            #### macOS (Dynamic Library)
+            ```c
+            #define STREEBOG_USE_DLL
+            #include "streebog.h"
+            
+            // Compile: clang -o app app.c -L. -lfast-streebog -Wl,-rpath,@loader_path
+            // Or: clang -o app app.c libfast-streebog.dylib
+            ```
+            
+            #### Static Library (Both Platforms)
+            ```c
+            #include "streebog.h"
+            
+            // Windows: link with fast-streebog-static.lib
+            // macOS: link with libfast-streebog-lib.a
+            ```
+            
+            #### FFI-Optimized File Hashing
+            ```c
+            uint8_t hash_256[32], hash_512[64];
+            int result = streebog_hash_file_dual("large_file.bin", hash_256, hash_512, NULL, NULL);
+            if (result == 0) {
+                // Both hashes computed in single pass - perfect for FFI!
+            }
+            ```
+          files: |
+            streebog_windows_x64.zip
+            streebog_macos_universal.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
