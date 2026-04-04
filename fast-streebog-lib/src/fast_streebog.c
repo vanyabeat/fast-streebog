@@ -150,10 +150,10 @@ void STREEBOG_NAMESPACE(init_256)(streebog_ctx *ctx)
 // Process a full 512-bit block
 static void process_block(streebog_ctx *ctx, const uint8_t *block)
 {
-    // N_512 = 512 as 64-byte big-endian
-    static const uint8_t N_512[64] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    // N_512 = 512 as 64-byte big-endian (byte[63] is LSB, 512 = 0x200)
+    static const uint8_t N_512[64] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0,
+                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0,
+                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, 0};
 
     // h = g(N, h, m)
     STREEBOG_NAMESPACE(g_n)(ctx->N, ctx->h, block, ctx->h);
@@ -198,47 +198,43 @@ void STREEBOG_NAMESPACE(final)(streebog_ctx *ctx, uint8_t *out)
     uint8_t padded[64];
     uint8_t N_0[64] = {0};
     uint8_t len_bytes[64] = {0};
+    uint8_t temp_block[64];
 
     // Total message length
     size_t total_len = ctx->msg_len;
 
-    // Reverse the entire message buffer in-place (one pass)
-    // This converts from natural byte order to GOST little-endian
-    if (total_len > 1)
-    {
-        size_t left = 0;
-        size_t right = total_len - 1;
-        while (left < right)
-        {
-            uint8_t tmp = ctx->msg_buf[left];
-            ctx->msg_buf[left] = ctx->msg_buf[right];
-            ctx->msg_buf[right] = tmp;
-            left++;
-            right--;
-        }
-    }
-
-    // Now process blocks sequentially (data is already reversed)
+    // Process full 64-byte blocks from the beginning of the message.
+    // In GOST convention byte[0] is the least significant byte, so
+    // bytes [0..63] form the "rightmost" (least significant) 512-bit block
+    // which must be processed first. Each block is reversed to the internal
+    // big-endian format (byte[0] = MSB) before feeding into g_n.
     size_t pos = 0;
     while (pos + 64 <= total_len)
     {
-        process_block(ctx, ctx->msg_buf + pos);
+        // Reverse this 64-byte block to internal big-endian format
+        for (int i = 0; i < 64; i++)
+        {
+            temp_block[i] = ctx->msg_buf[pos + 63 - i];
+        }
+        process_block(ctx, temp_block);
         pos += 64;
     }
 
-    // Remaining bytes
+    // Remaining bytes (the most significant part of the message)
     size_t remainder = total_len - pos;
 
-    // Pad the message: 0...0 || 1 || M
-    // Message length in bits
+    // Message length in bits for the remaining part
     size_t msg_bits = remainder * 8;
 
-    // Create padded block
+    // Create padded block: 0...0 || 1 || M_remainder (in internal big-endian format)
     memset(padded, 0, 64);
     if (remainder > 0)
     {
-        // Copy remainder into right side of padded (already reversed)
-        memcpy(padded + (64 - remainder), ctx->msg_buf + pos, remainder);
+        // Reverse remainder bytes into the LSB side of padded block
+        for (size_t i = 0; i < remainder; i++)
+        {
+            padded[63 - i] = ctx->msg_buf[pos + i];
+        }
     }
     // Set the '1' bit after padding zeros
     padded[64 - remainder - 1] = 0x01;

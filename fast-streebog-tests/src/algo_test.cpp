@@ -990,3 +990,60 @@ TEST(FastStreebog, TestHash512_TestWOW)
 
     EXPECT_EQ(memcmp(hash.data(), expected_512, 64), 0) << "TestWOW 512-bit hash mismatch";
 }
+
+TEST(FastStreebog, TestHash512_HarryPotter)
+{
+    std::string msg = R"(Harry Potter and the Sorcerer's Stone 
+CHAPTER ONE 
+THE BOY WHO LIVED 
+Mr. and Mrs. Dursley, of number four, Privet Drive, were proud to say that they were perfectly normal, thank you very much. They were the last people you'd expect to be involved in anything strange or mysterious, because they just didn't hold with such nonsense. 
+Mr. Dursley was the director of a firm called Grunnings, which made drills. He was a big, beefy man with hardly any neck, although he did have a very large mustache. Mrs. Dursley was thin and blonde and had nearly twice the usual amount of neck, which came in very useful as she spent so much of her time craning over garden fences, spying on the neighbors. The Dursleys had a small son called Dudley and in their opinion there was no finer boy anywhere. 
+The Dursleys had everything they wanted, but they also had a secret, and their greatest fear was that somebody would discover it. They didn't think they could bear it if anyone found out about the Potters. Mrs. Potter was Mrs. Dursley's sister, but they hadn't met for several years; in fact, Mrs. Dursley pretended she didn't have a sister, because her sister and her good-for-nothing husband were as unDursleyish as it was possible to be. The Dursleys shuddered to think what the neighbors would say if the Potters arrived in the street. The Dursleys knew that the Potters had a small son, too, but they had never even seen him. This boy was another good reason for keeping the Potters away; they didn't want Dudley mixing with a child like that. 
+When Mr. and Mrs. Dursley woke up on the dull, gray Tuesday our story starts, there was nothing about the cloudy sky outside to suggest that strange and mysterious things would soon be happening all over the country. Mr. Dursley hummed as he picked out his most boring tie for work, and Mrs. Dursley gossiped away happily as she wrestled a screaming Dudley into his high chair. 
+None of them noticed a large, tawny owl flutter past the window. 
+At half past eight, Mr. Dursley picked up his briefcase, pecked Mrs. Dursley on the cheek, and tried to kiss Dudley good-bye but missed, because Dudley was now having a tantrum and throwing his cereal at the walls. "Little tyke," chortled Mr. Dursley as he left the house. He got into his car and backed out of number four's drive. 
+It was on the corner of the street that he noticed the first sign of something peculiar -- a cat reading a map. For a second, Mr. Dursley didn't realize what he had seen -- then he jerked his head around to look again. There was a tabby cat standing on the corner of Privet Drive, but there wasn't a map in sight. What could he have been thinking of? It must have been a trick of the light. Mr. Dursley blinked and stared at the cat. It stared back. As Mr. Dursley drove around the corner and up the road, he watched the cat in his mirror. It was now reading the sign that said Privet Drive -- no, looking at the sign; cats couldn't read maps or signs. Mr. Dursley gave himself a little shake and put the cat out of his mind. As he drove toward town he thought of nothing except a large order of drills he was hoping to get that day.)";
+
+    std::vector<uint8_t> hash(64);
+    STREEBOG_NAMESPACE(hash_512)((const uint8_t *)msg.data(), msg.size(), hash.data());
+
+    // Expected:
+    // a9e2a650f4c008e8f2aef0fbd2fe52725ae1d643ab4a81648ff707d4679fd87c00222215f5d7729842f7356643462916ada4ce9734b24705d9547320ed88fb69
+    const uint8_t expected_512[] = {0xa9, 0xe2, 0xa6, 0x50, 0xf4, 0xc0, 0x08, 0xe8, 0xf2, 0xae, 0xf0, 0xfb, 0xd2,
+                                    0xfe, 0x52, 0x72, 0x5a, 0xe1, 0xd6, 0x43, 0xab, 0x4a, 0x81, 0x64, 0x8f, 0xf7,
+                                    0x07, 0xd4, 0x67, 0x9f, 0xd8, 0x7c, 0x00, 0x22, 0x22, 0x15, 0xf5, 0xd7, 0x72,
+                                    0x98, 0x42, 0xf7, 0x35, 0x66, 0x43, 0x46, 0x29, 0x16, 0xad, 0xa4, 0xce, 0x97,
+                                    0x34, 0xb2, 0x47, 0x05, 0xd9, 0x54, 0x73, 0x20, 0xed, 0x88, 0xfb, 0x69};
+
+    std::cout << "Got HarryPotter 512: ";
+    for (int i = 0; i < 64; i++)
+    {
+        printf("%02x", hash[i]);
+    }
+    std::cout << std::endl;
+
+    EXPECT_EQ(memcmp(hash.data(), expected_512, 64), 0) << "HarryPotter 512-bit hash mismatch";
+}
+
+TEST(FastStreebog, TestHash256_HelloWorldRepeat)
+{
+    // 70 bytes - triggers multi-block processing (>64 bytes)
+    std::string msg = "Hello, world! Hello, world! Hello, world! Hello, world! Hello, world!";
+
+    std::vector<uint8_t> hash(32);
+    STREEBOG_NAMESPACE(hash_256)((const uint8_t *)msg.data(), msg.size(), hash.data());
+
+    // Expected from CryptoPro utility:
+    const uint8_t expected_256[] = {0x68, 0xb4, 0x06, 0xd4, 0xca, 0x8d, 0x60, 0xd1, 0x44, 0x4e, 0xc7,
+                                    0xc7, 0x93, 0x0a, 0x09, 0x5a, 0xce, 0x16, 0xd7, 0x6b, 0x34, 0x6a,
+                                    0x0e, 0xc2, 0x10, 0xd7, 0x2f, 0xb3, 0x01, 0x8c, 0x8d, 0x36};
+
+    std::cout << "Got HelloWorldRepeat 256: ";
+    for (int i = 0; i < 32; i++)
+    {
+        printf("%02x", hash[i]);
+    }
+    std::cout << std::endl;
+
+    EXPECT_EQ(memcmp(hash.data(), expected_256, 32), 0) << "HelloWorldRepeat 256-bit hash mismatch";
+}
