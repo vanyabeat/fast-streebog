@@ -24,21 +24,22 @@ CONST_3F    DB 64 DUP(03Fh)
 
 .CODE
 
-streebog_s_transform PROC
+streebog_s_transform_avx512 PROC
     
-    vmovdqu64 zmm0, ZMMWORD PTR [rcx]    
-    vmovdqu64 zmm1, ZMMWORD PTR [SBOX_0_63]
-    vmovdqu64 zmm2, ZMMWORD PTR [SBOX_64_127]
-    vmovdqu64 zmm3, ZMMWORD PTR [SBOX_128_191]
-    vmovdqu64 zmm4, ZMMWORD PTR [SBOX_192_255]
+    vmovdqu64 zmm0, ZMMWORD PTR [rcx]               ; load input block (64 bytes)
+    vmovdqu64 zmm1, ZMMWORD PTR [SBOX_0_63]         ; load first S-box slice
+    vmovdqu64 zmm2, ZMMWORD PTR [SBOX_64_127]       ; load second S-box slice
+    vmovdqu64 zmm3, ZMMWORD PTR [SBOX_128_191]      ; load third S-box slice
+    vmovdqu64 zmm4, ZMMWORD PTR [SBOX_192_255]      ; load fourth S-box slice
     
-    vmovdqu64 zmm13, ZMMWORD PTR [CONST_3F]
+    vmovdqu64 zmm13, ZMMWORD PTR [CONST_3F]         ; mask 0x3F for lower 6 bits
     
-    vpandq zmm5, zmm0, zmm13          
+    vpandq zmm5, zmm0, zmm13                        ; mask input with 0x3F (lower 6 bits)      
     
-    vpsrlw zmm14, zmm0, 6             
-    vpandd zmm14, zmm14, zmm13        
+    vpsrlw zmm14, zmm0, 6                           ; shift input right 6 bits 
+    vpandd zmm14, zmm14, zmm13                      ; mask again to keep next 6 bits
     
+    ; map each byte to S-box slice
     vpermb zmm6, zmm5, zmm1           
     vpermb zmm7, zmm5, zmm2           
     vpermb zmm8, zmm5, zmm3           
@@ -65,16 +66,18 @@ streebog_s_transform PROC
     
     vpcmpub k4, zmm0, zmm12, 5        
     
+    ; prepare predicate masks for conditional moves
     vpxorq zmm0, zmm0, zmm0
     
+    ; apply selected S-box slices to output using masked moves 
     vmovdqu8 zmm0 {k1}, zmm6          
     vmovdqu8 zmm0 {k2}, zmm7          
     vmovdqu8 zmm0 {k3}, zmm8          
     vmovdqu8 zmm0 {k4}, zmm9          
     
-    vmovdqu64 ZMMWORD PTR [rdx], zmm0
+    vmovdqu64 ZMMWORD PTR [rdx], zmm0               ; store output block
     
     ret
-streebog_s_transform ENDP
+streebog_s_transform_avx512 ENDP
 
 END

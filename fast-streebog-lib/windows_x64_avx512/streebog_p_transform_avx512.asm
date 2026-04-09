@@ -8,11 +8,11 @@ TAU     DB  0,  8, 16, 24, 32, 40, 48, 56
         DB  6, 14, 22, 30, 38, 46, 54, 62
         DB  7, 15, 23, 31, 39, 47, 55, 63
 .CODE
-streebog_p_transform PROC
-    vmovdqu64 zmm0, ZMMWORD PTR [rcx]   
+streebog_p_transform_avx512 PROC
+    vmovdqu64 zmm0, ZMMWORD PTR [rcx]  
     vmovdqu64 zmm1, ZMMWORD PTR [TAU]   
-    vpermb zmm0, zmm1, zmm0             
+    vpermb zmm0, zmm1, zmm0           
     vmovdqu64 ZMMWORD PTR [rdx], zmm0   
     ret
-streebog_p_transform ENDP
+streebog_p_transform_avx512 ENDP
 END

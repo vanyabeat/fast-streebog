@@ -20,20 +20,17 @@
 PRIVATE_GLOBAL SYMBOL(streebog_l_transform)
 .global SYMBOL(streebog_l_transform)
 
-// Optimized L-transform using precalculated lookup tables
-// void streebog_l_transform(const uint8_t *state, uint8_t *out)
 SYMBOL(streebog_l_transform):
-    // x0 = state (input), x1 = out (output)
-    
-    // Save callee-saved registers (we need x19-x27 for table pointers)
+
+    // Save frame and callee-saved registers
     stp     x29, x30, [sp, #-80]!
     mov     x29, sp
     stp     x19, x20, [sp, #16]
     stp     x21, x22, [sp, #32]
     stp     x23, x24, [sp, #48]
     stp     x25, x26, [sp, #64]
-    
-    // Load all 8 table base addresses ONCE before the loop
+
+    // Load addresses of precomputed tables
     load_table_address x19, SYMBOL(Ax_COL0)
     load_table_address x20, SYMBOL(Ax_COL1)
     load_table_address x21, SYMBOL(Ax_COL2)
@@ -42,245 +39,296 @@ SYMBOL(streebog_l_transform):
     load_table_address x24, SYMBOL(Ax_COL5)
     load_table_address x25, SYMBOL(Ax_COL6)
     load_table_address x26, SYMBOL(Ax_COL7)
-    
-    // Process 8 blocks (unrolled for better performance)
-    // Block 0
-    ldr     x2, [x0, #0]            // Load 8 bytes at once
-    
-    and     x3, x2, #0xFF           // byte 0
-    ldr     x9, [x19, x3, lsl #3]   // result = Ax_COL0[byte0]
-    
-    ubfx    x3, x2, #8, #8          // byte 1
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    ubfx    x3, x2, #16, #8         // byte 2
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    ubfx    x3, x2, #24, #8         // byte 3
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    ubfx    x3, x2, #32, #8         // byte 4
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    ubfx    x3, x2, #40, #8         // byte 5
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    ubfx    x3, x2, #48, #8         // byte 6
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    lsr     x3, x2, #56             // byte 7
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    
-    rev     x9, x9
-    str     x9, [x1, #0]
-    
-    // Block 1
-    ldr     x2, [x0, #8]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #8]
-    
-    // Block 2
-    ldr     x2, [x0, #16]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #16]
-    
-    // Block 3
-    ldr     x2, [x0, #24]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #24]
-    
-    // Block 4
-    ldr     x2, [x0, #32]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #32]
-    
-    // Block 5
-    ldr     x2, [x0, #40]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #40]
-    
-    // Block 6
-    ldr     x2, [x0, #48]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #48]
-    
-    // Block 7
-    ldr     x2, [x0, #56]
-    and     x3, x2, #0xFF
-    ldr     x9, [x19, x3, lsl #3]
-    ubfx    x3, x2, #8, #8
-    ldr     x10, [x20, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #16, #8
-    ldr     x10, [x21, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #24, #8
-    ldr     x10, [x22, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #32, #8
-    ldr     x10, [x23, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #40, #8
-    ldr     x10, [x24, x3, lsl #3]
-    eor     x9, x9, x10
-    ubfx    x3, x2, #48, #8
-    ldr     x10, [x25, x3, lsl #3]
-    eor     x9, x9, x10
-    lsr     x3, x2, #56
-    ldr     x10, [x26, x3, lsl #3]
-    eor     x9, x9, x10
-    rev     x9, x9
-    str     x9, [x1, #56]
-    
-    // Restore callee-saved registers
+
+    // Load input 64-bit words from memory (ARM little-endian)
+    // We will emulate big-endian arithmetic for GOST
+    ldr     x2, [x0, #0]
+    ldr     x3, [x0, #8]
+    ldr     x4, [x0, #16]
+    ldr     x5, [x0, #24]
+    ldr     x6, [x0, #32]
+    ldr     x7, [x0, #40]
+    ldr     x8, [x0, #48]
+    ldr     x9, [x0, #56]
+
+    // Initialize output registers with first table lookup (byte 0)
+    and     x0, x2, #0xFF
+    ldr     x10, [x19, x0, lsl #3]   // block 0, byte 0
+
+    and     x0, x3, #0xFF
+    ldr     x11, [x19, x0, lsl #3]   // block 1, byte 0
+
+    and     x0, x4, #0xFF
+    ldr     x12, [x19, x0, lsl #3]   // block 2, byte 0
+
+    and     x0, x5, #0xFF
+    ldr     x13, [x19, x0, lsl #3]   // block 3, byte 0
+
+    and     x0, x6, #0xFF
+    ldr     x14, [x19, x0, lsl #3]   // block 4, byte 0
+
+    and     x0, x7, #0xFF
+    ldr     x15, [x19, x0, lsl #3]   // block 5, byte 0
+
+    and     x0, x8, #0xFF
+    ldr     x16, [x19, x0, lsl #3]   // block 6, byte 0
+
+    and     x0, x9, #0xFF
+    ldr     x17, [x19, x0, lsl #3]  // block 7, byte 0
+
+    // Process bytes 1..6 via table lookup and XOR
+    // ubfx extracts byte i, lsl shifts for table index, eor combines
+    // byte 1
+    ubfx    x0, x2, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x10, x10, x0
+
+    ubfx    x0, x3, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x11, x11, x0
+
+    ubfx    x0, x4, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x12, x12, x0
+
+    ubfx    x0, x5, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x13, x13, x0
+
+    ubfx    x0, x6, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x14, x14, x0
+
+    ubfx    x0, x7, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x15, x15, x0
+
+    ubfx    x0, x8, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x16, x16, x0
+
+    ubfx    x0, x9, #8, #8
+    ldr     x0, [x20, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // byte 2
+    ubfx    x0, x2, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x10, x10, x0
+
+    ubfx    x0, x3, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x11, x11, x0
+
+    ubfx    x0, x4, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x12, x12, x0
+
+    ubfx    x0, x5, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x13, x13, x0
+
+    ubfx    x0, x6, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x14, x14, x0
+
+    ubfx    x0, x7, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x15, x15, x0
+
+    ubfx    x0, x8, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x16, x16, x0
+
+    ubfx    x0, x9, #16, #8
+    ldr     x0, [x21, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // byte 3
+    ubfx    x0, x2, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x10, x10, x0
+
+    ubfx    x0, x3, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x11, x11, x0
+
+    ubfx    x0, x4, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x12, x12, x0
+
+    ubfx    x0, x5, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x13, x13, x0
+
+    ubfx    x0, x6, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x14, x14, x0
+
+    ubfx    x0, x7, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x15, x15, x0
+
+    ubfx    x0, x8, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x16, x16, x0
+
+    ubfx    x0, x9, #24, #8
+    ldr     x0, [x22, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // byte 4
+    ubfx    x0, x2, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x10, x10, x0
+
+    ubfx    x0, x3, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x11, x11, x0
+
+    ubfx    x0, x4, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x12, x12, x0
+
+    ubfx    x0, x5, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x13, x13, x0
+
+    ubfx    x0, x6, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x14, x14, x0
+
+    ubfx    x0, x7, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x15, x15, x0
+
+    ubfx    x0, x8, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x16, x16, x0
+
+    ubfx    x0, x9, #32, #8
+    ldr     x0, [x23, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // byte 5
+    ubfx    x0, x2, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x10, x10, x0
+
+    ubfx    x0, x3, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x11, x11, x0
+
+    ubfx    x0, x4, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x12, x12, x0
+
+    ubfx    x0, x5, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x13, x13, x0
+
+    ubfx    x0, x6, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x14, x14, x0
+
+    ubfx    x0, x7, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x15, x15, x0
+
+    ubfx    x0, x8, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x16, x16, x0
+
+    ubfx    x0, x9, #40, #8
+    ldr     x0, [x24, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // byte 6
+    ubfx    x0, x2, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x10, x10, x0
+
+    ubfx    x0, x3, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x11, x11, x0
+
+    ubfx    x0, x4, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x12, x12, x0
+
+    ubfx    x0, x5, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x13, x13, x0
+
+    ubfx    x0, x6, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x14, x14, x0
+
+    ubfx    x0, x7, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x15, x15, x0
+
+    ubfx    x0, x8, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x16, x16, x0
+
+    ubfx    x0, x9, #48, #8
+    ldr     x0, [x25, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // byte 7 (most significant), use logical shift right to extract 
+    lsr     x0, x2, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x10, x10, x0
+
+    lsr     x0, x3, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x11, x11, x0
+
+    lsr     x0, x4, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x12, x12, x0
+
+    lsr     x0, x5, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x13, x13, x0
+
+    lsr     x0, x6, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x14, x14, x0
+
+    lsr     x0, x7, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x15, x15, x0
+
+    lsr     x0, x8, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x16, x16, x0
+
+    lsr     x0, x9, #56
+    ldr     x0, [x26, x0, lsl #3]
+    eor     x17, x17, x0
+
+    // Byte-swap registers to emulate big-endian memory storage for GOST
+    rev     x10, x10
+    rev     x11, x11
+    rev     x12, x12
+    rev     x13, x13
+    rev     x14, x14
+    rev     x15, x15
+    rev     x16, x16
+    rev     x17, x17
+
+    // Store 64-bit words in memory (as big-endian for GOST)
+    stp     x10, x11, [x1, #0]
+    stp     x12, x13, [x1, #16]
+    stp     x14, x15, [x1, #32]
+    stp     x16, x17, [x1, #48]
+
+    // Restore callee-saved registers and frame pointer
     ldp     x25, x26, [sp, #64]
     ldp     x23, x24, [sp, #48]
     ldp     x21, x22, [sp, #32]
     ldp     x19, x20, [sp, #16]
-    ldp     x29, x30, [sp], #80
+    ldp     x29, x30, [sp], #80   
     ret

@@ -1,5 +1,6 @@
 .data
 ALIGN 16
+
 C_0:
     DB 0b1h, 008h, 05bh, 0dah, 01eh, 0cah, 0dah, 0e9h, 0ebh, 0cbh, 02fh
     DB 081h, 0c0h, 065h, 07ch, 01fh, 02fh, 06ah, 076h, 043h, 02eh, 045h
@@ -96,7 +97,6 @@ C_11:
     DB 088h, 0e1h, 028h, 052h, 0fah, 0f4h, 017h, 0d5h, 0d9h, 0b2h, 01bh
     DB 099h, 048h, 0bch, 092h, 04ah, 0f1h, 01bh, 0d7h, 020h
 
-
 C_TABLE:
     QWORD C_0
     QWORD C_1
@@ -112,53 +112,68 @@ C_TABLE:
     QWORD C_11
 
 .code
+EXTERN streebog_s_transform_avx512:PROC
+EXTERN streebog_p_transform_avx512:PROC
+EXTERN streebog_l_transform_avx512:PROC
 
+streebog_key_schedule_avx512 PROC
 
-EXTERN streebog_xor_512:PROC
-EXTERN streebog_s_transform:PROC
-EXTERN streebog_p_transform:PROC
-EXTERN streebog_l_transform:PROC
-
-streebog_key_schedule PROC
-    
+    ; Save registers that will be used 
     push rbx
     push rsi
     push r12
     push r13
-    
-    sub rsp, 40         
+    push r14
+    sub  rsp, 40        ; allocate small scratch space on stack
 
-    mov rsi, rcx        
-    mov r12d, edx       
-    mov r13, r8         
-    
-    
-    lea rbx, [C_TABLE]
+    sub  rsp, 64        ; allocate 64-byte temporary buffer
+    mov  r14, rsp       ; r14 points to tmp buffer
+    mov rsi,  rcx       ; rsi = K (input key)
+    mov r12d, edx       ; r12d = round index
+    mov r13,  r8        ; r13 = output pointer
+
+    lea  rbx, [C_TABLE]                     ; rbx points to C constants table
     movsxd rax, r12d
-    mov rbx, QWORD PTR [rbx + rax*8]  
-    
-    mov rcx, rsi        
-    mov rdx, rbx        
-    mov r8, r13         
-    call streebog_xor_512
-    
-    mov rcx, r13        
-    mov rdx, r13        
-    call streebog_s_transform
-    
-    mov rcx, r13        
-    mov rdx, r13        
-    call streebog_p_transform
-    
-    mov rcx, r13        
-    mov rdx, r13        
-    call streebog_l_transform
-    
-    add rsp, 40
-    pop r13
-    pop r12
-    pop rsi
-    pop rbx
+    mov  rbx, QWORD PTR [rbx + rax*8]       ; rbx = address of C[round]
+
+    ; XOR input key K with C[round]
+    vmovdqu64 zmm0, ZMMWORD PTR [rsi]       ; load K
+    vmovdqu64 zmm1, ZMMWORD PTR [rbx]       ; load C[round]
+    vpxorq    zmm0, zmm0, zmm1              ; XOR K ^ C[round]
+    vmovdqu64 ZMMWORD PTR [r13], zmm0       ; store result to output
+
+    ; S-box transformation
+    mov rcx, r13 ; rcx = output pointer
+    mov rdx, r14 ; rdx = tmp buffer pointer
+    call streebog_s_transform_avx512
+    vmovdqu64 zmm0, ZMMWORD PTR [r14]       ; load tmp
+    vmovdqu64 ZMMWORD PTR [r13], zmm0       ; store back to output
+
+    ; P-transposition
+    mov rcx, r13                            ; rcx = output pointer
+    mov rdx, r14                            ; rdx = tmp buffer pointer
+    call streebog_p_transform_avx512
+    vmovdqu64 zmm0, ZMMWORD PTR [r14]
+    vmovdqu64 ZMMWORD PTR [r13], zmm0
+
+    ; L-linear transformation
+    mov rcx, r13
+    mov rdx, r14
+    call streebog_l_transform_avx512
+    vmovdqu64 zmm0, ZMMWORD PTR [r14]
+    vmovdqu64 ZMMWORD PTR [r13], zmm0
+
+    vzeroupper                              ; clear upper parts of YMM/ZMM registers
+
+    add  rsp, 64                            ; deallocate tmp buffer
+    add  rsp, 40                            ; deallocate scratch space
+    pop  r14
+    pop  r13
+    pop  r12
+    pop  rsi
+    pop  rbx
     ret
-streebog_key_schedule ENDP
+
+streebog_key_schedule_avx512 ENDP
+END
 END

@@ -9,7 +9,7 @@
 .data
 .align 4
 
-// Column 0 (byte offset 0)
+// Column 0 (byte offset 0) 
 PRIVATE_GLOBAL SYMBOL(Ax_COL0)
 .global SYMBOL(Ax_COL0)
 SYMBOL(Ax_COL0):

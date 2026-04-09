@@ -13,7 +13,7 @@ PRIVATE_GLOBAL SYMBOL(streebog_p_transform)
 .global SYMBOL(streebog_p_transform)
 
 // TAU permutation indices for NEON tbl instruction
-// Split into 4 parts of 16 bytes each for tbl2 operations
+// Split into 4 parts of 16 bytes each for tbl2 operations 
 .align 4
 TAU_IDX_0:  // Output bytes 0-15: which input bytes to take
     .byte  0,  8, 16, 24, 32, 40, 48, 56   // from state positions

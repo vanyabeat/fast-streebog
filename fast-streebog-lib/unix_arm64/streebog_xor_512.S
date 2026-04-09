@@ -21,7 +21,7 @@ PRIVATE_GLOBAL SYMBOL(streebog_xor_512)
 SYMBOL(streebog_xor_512):
     // x0 = a, x1 = b, x2 = out
     
-    // Load all 64 bytes (512 bits) from both inputs in 2 instructions each
+    // Load all 64 bytes (512 bits) from both inputs in 2 instructions each 
     ld1     {v0.16b, v1.16b, v2.16b, v3.16b}, [x0]   // Load 64 bytes from a
     ld1     {v4.16b, v5.16b, v6.16b, v7.16b}, [x1]   // Load 64 bytes from b
     
