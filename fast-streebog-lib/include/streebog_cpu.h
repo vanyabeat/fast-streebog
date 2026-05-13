@@ -48,6 +48,20 @@ static inline int has_avx512(void)
     return (info[1] & (1 << 16)) != 0;
 }
 
+#elif defined(__GNUC__) && (defined(__x86_64__) || defined(__amd64__))
+
+static int has_avx2(void) {
+    unsigned int eax, ebx, ecx, edx;
+    if (__get_cpuid_max(0, NULL) < 7) return 0;
+    __cpuid_count(7, 0, eax, ebx, ecx, edx);
+    return (ebx & (1u << 5)) != 0;
+}
+static int has_ssse3(void) {
+    unsigned int eax, ebx, ecx, edx;
+    __cpuid(1, eax, ebx, ecx, edx);
+    return (ecx & (1u << 9)) != 0;
+}
+
 // Non-x86 platforms: SIMD feature detection not implemented
 // All features default to "not available"
 #else
