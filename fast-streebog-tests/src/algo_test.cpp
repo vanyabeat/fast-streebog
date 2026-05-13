@@ -1047,10 +1047,15 @@ TEST(FastStreebog, TestHash256_HelloWorldRepeat)
     extern void streebog_key_schedule_##suffix(const uint8_t*, int, uint8_t*);
 
 extern "C" {
+#if defined(_MSC_VER)
     DECLARE_ASM_VARIANT(sse2)
     DECLARE_ASM_VARIANT(ssse3)
     DECLARE_ASM_VARIANT(avx2)
     DECLARE_ASM_VARIANT(avx512)
+#elif defined(__GNUC__) && (defined(__x86_64__) || defined(__amd64__))
+    DECLARE_ASM_VARIANT(avx2)
+    DECLARE_ASM_VARIANT(ssse3)
+#endif
 }
 
 // Reference scalar implementations
@@ -1075,11 +1080,13 @@ struct Impl {
 static int always() { return 1; }
 
 static const Impl IMPLS[] = {
+#if defiend(_MSC_VER)
     {
         "SSE2", always,
         streebog_s_transform_sse2, streebog_p_transform_sse2, streebog_l_transform_sse2,
         streebog_xor_512_sse2, streebog_add_512_sse2, streebog_key_schedule_sse2
     },
+#endif
     {
         "SSSE3", has_ssse3,
         streebog_s_transform_ssse3, streebog_p_transform_ssse3, streebog_l_transform_ssse3,
@@ -1090,11 +1097,13 @@ static const Impl IMPLS[] = {
         streebog_s_transform_avx2, streebog_p_transform_avx2, streebog_l_transform_avx2,
         streebog_xor_512_avx2, streebog_add_512_avx2, streebog_key_schedule_avx2
     },
+#if defiend(_MSC_VER)
     {
         "AVX512", has_avx512,
         streebog_s_transform_avx512, streebog_p_transform_avx512, streebog_l_transform_avx512,
         streebog_xor_512_avx512, streebog_add_512_avx512, streebog_key_schedule_avx512
     },
+#endif
 };
 
 TEST(DispatchCorrectness, STransform)
