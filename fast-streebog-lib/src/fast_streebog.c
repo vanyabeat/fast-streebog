@@ -3,47 +3,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "streebog_cpu.h"
 
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
 
-#ifdef STREEBOG_USE_ASM
+// Declares ISA-specific ASM implementations used by the dispatcher
+#define DECLARE_ASM_VARIANT(suffix) \
+    extern void streebog_xor_512_##suffix(const uint8_t*, const uint8_t*, uint8_t*); \
+    extern void streebog_add_512_##suffix(const uint8_t*, const uint8_t*, uint8_t*); \
+    extern void streebog_s_transform_##suffix(const uint8_t*, uint8_t*); \
+    extern void streebog_p_transform_##suffix(const uint8_t*, uint8_t*); \
+    extern void streebog_l_transform_##suffix(const uint8_t*, uint8_t*); \
+    extern void streebog_key_schedule_##suffix(const uint8_t*, int, uint8_t*);
 
-#if defined(_MSC_VER)
 // External ASM function declarations
-// AVX-512 variants
-extern void streebog_xor_512_avx512(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_add_512_avx512(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_s_transform_avx512(const uint8_t*, uint8_t*);
-extern void streebog_p_transform_avx512(const uint8_t*, uint8_t*);
-extern void streebog_l_transform_avx512(const uint8_t*, uint8_t*);
-extern void streebog_key_schedule_avx512(const uint8_t*, int, uint8_t*);
-
-// AVX2 variants
-extern void streebog_xor_512_avx2(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_add_512_avx2(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_s_transform_avx2(const uint8_t*, uint8_t*);
-extern void streebog_p_transform_avx2(const uint8_t*, uint8_t*);
-extern void streebog_l_transform_avx2(const uint8_t*, uint8_t*);
-extern void streebog_key_schedule_avx2(const uint8_t*, int, uint8_t*);
-
-// SSSE3 variants
-extern void streebog_xor_512_ssse3(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_add_512_ssse3(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_s_transform_ssse3(const uint8_t*, uint8_t*);
-extern void streebog_p_transform_ssse3(const uint8_t*, uint8_t*);
-extern void streebog_l_transform_ssse3(const uint8_t*, uint8_t*);
-extern void streebog_key_schedule_ssse3(const uint8_t*, int, uint8_t*);
-
-// SSE2 variants (fallback)
-extern void streebog_xor_512_sse2(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_add_512_sse2(const uint8_t*, const uint8_t*, uint8_t*);
-extern void streebog_s_transform_sse2(const uint8_t*, uint8_t*);
-extern void streebog_p_transform_sse2(const uint8_t*, uint8_t*);
-extern void streebog_l_transform_sse2(const uint8_t*, uint8_t*);
-extern void streebog_key_schedule_sse2(const uint8_t*, int, uint8_t*);
-
+#ifdef STREEBOG_USE_ASM
+#if defined(_MSC_VER)
+    DECLARE_ASM_VARIANT(avx512);
+    DECLARE_ASM_VARIANT(avx2);
+    DECLARE_ASM_VARIANT(ssse3);
+    DECLARE_ASM_VARIANT(sse2);
 
 #elif defined(__aarch64__) || defined(__arm64__)
 extern void streebog_xor_512(const uint8_t*, const uint8_t*, uint8_t*);
@@ -70,61 +51,6 @@ typedef struct {
 static streebog_impl_t g_impl;
 static int g_initialized = 0;
 
-// CPU feature detection via CPUID + XGETBV (MSVC only)
-// Checks OS support for XSAVE before probing AVX bits
-static int has_avx2(void)
-{
-#ifdef _MSC_VER
-    int info[4];
-
-    __cpuid(info, 0);
-    if (info[0] < 7) return 0;
-
-    __cpuid(info, 1);
-    if (!(info[2] & (1 << 27))) return 0;
-
-    unsigned long long xcr = _xgetbv(0);
-    if ((xcr & 0x6) != 0x6) return 0;
-
-    __cpuidex(info, 7, 0);
-    return (info[1] & (1 << 5)) != 0;
-#else
-    return 0;
-#endif
-}
-
-static int has_ssse3(void)
-{
-#ifdef _MSC_VER
-    int info[4];
-    __cpuid(info, 1);
-    return (info[2] & (1 << 9)) != 0;
-#else
-    return 0;
-#endif
-}
-
-static int has_avx512(void)
-{
-#ifdef _MSC_VER
-    int info[4];
-
-    __cpuid(info, 0);
-    if (info[0] < 7) return 0;
-
-    __cpuid(info, 1);
-    if (!(info[2] & (1 << 27))) return 0;
-
-    unsigned long long xcr = _xgetbv(0);
-    if ((xcr & 0xE6) != 0xE6) return 0;
-
-    __cpuidex(info, 7, 0);
-    return (info[1] & (1 << 16)) != 0;
-#else
-    return 0;
-#endif
-}
-
 // Selects the best available implementation at runtime (AVX-512 > AVX2 > SSSE3 > SSE2)
 // Falls back to portable C if no ASM path was compiled in (STREEBOG_USE_ASM not defined)
 // or if running on an unsupported architecture 
@@ -133,44 +59,23 @@ static void init_impl(void)
     // Zero out the entire structure before populating
     memset(&g_impl, 0, sizeof(g_impl));
 
+#define ASSIGN_IMPL(suffix) \
+    do { \
+        g_impl.xor_512      = streebog_xor_512_##suffix; \
+        g_impl.add_512      = streebog_add_512_##suffix; \
+        g_impl.s_transform  = streebog_s_transform_##suffix; \
+        g_impl.p_transform  = streebog_p_transform_##suffix; \
+        g_impl.l_transform  = streebog_l_transform_##suffix; \
+        g_impl.key_schedule = streebog_key_schedule_##suffix; \
+    } while(0)
+
 #ifdef STREEBOG_USE_ASM
 
 #if defined(_MSC_VER)
-    if (has_avx512())
-    {
-        g_impl.xor_512      = streebog_xor_512_avx512;
-        g_impl.add_512      = streebog_add_512_avx512;
-        g_impl.s_transform  = streebog_s_transform_avx512;
-        g_impl.p_transform  = streebog_p_transform_avx512;
-        g_impl.l_transform  = streebog_l_transform_avx512;
-        g_impl.key_schedule = streebog_key_schedule_avx512;
-    }
-    else if (has_avx2())
-    {
-        g_impl.xor_512      = streebog_xor_512_avx2;
-        g_impl.add_512      = streebog_add_512_avx2;
-        g_impl.s_transform  = streebog_s_transform_avx2;
-        g_impl.p_transform  = streebog_p_transform_avx2;
-        g_impl.l_transform  = streebog_l_transform_avx2;
-        g_impl.key_schedule = streebog_key_schedule_avx2;
-    }
-    else if (has_ssse3())
-    {
-        g_impl.xor_512      = streebog_xor_512_ssse3;
-        g_impl.add_512      = streebog_add_512_ssse3;
-        g_impl.s_transform  = streebog_s_transform_ssse3;
-        g_impl.p_transform  = streebog_p_transform_ssse3;
-        g_impl.l_transform  = streebog_l_transform_ssse3;
-        g_impl.key_schedule = streebog_key_schedule_ssse3;
-    }
-    else{
-        g_impl.xor_512      = streebog_xor_512_sse2;
-        g_impl.add_512      = streebog_add_512_sse2;
-        g_impl.s_transform  = streebog_s_transform_sse2;
-        g_impl.p_transform  = streebog_p_transform_sse2;
-        g_impl.l_transform  = streebog_l_transform_sse2;
-        g_impl.key_schedule = streebog_key_schedule_sse2;
-    }
+    if      (has_avx512()) ASSIGN_IMPL(avx512);
+    else if (has_avx2())   ASSIGN_IMPL(avx2);
+    else if (has_ssse3())  ASSIGN_IMPL(ssse3);
+    else                    ASSIGN_IMPL(sse2);
 
 #elif defined(__aarch64__) || defined(__arm64__)
     g_impl.xor_512      = streebog_xor_512;
@@ -183,17 +88,11 @@ static void init_impl(void)
 #endif
 
 #endif
-
     // Portable C fallback — used when STREEBOG_USE_ASM is not defined
     // or when running on an architecture with no ASM implementation
     if (!g_impl.xor_512)
     {
-        g_impl.xor_512      = streebog_xor_512_c;
-        g_impl.add_512      = streebog_add_512_c;
-        g_impl.s_transform  = streebog_s_transform_c;
-        g_impl.p_transform  = streebog_p_transform_c;
-        g_impl.l_transform  = streebog_l_transform_c_inline;
-        g_impl.key_schedule = streebog_key_schedule_c_inline;
+        ASSIGN_IMPL(c);
     }
 
     g_initialized = 1;
@@ -266,46 +165,28 @@ void STREEBOG_NAMESPACE(key_schedule)(const uint8_t *K, int i, uint8_t *out)
 void streebog_e_transform(const uint8_t *K, const uint8_t *m, uint8_t *out)
 {
 #ifdef _MSC_VER
-    __declspec(align(32)) uint8_t buf0[64];
-    __declspec(align(32)) uint8_t buf1[64];
+    __declspec(align(32)) uint8_t state[64];
     __declspec(align(32)) uint8_t key[64];
     __declspec(align(32)) uint8_t tmp[64];
 #else
-    __attribute__((aligned(32))) uint8_t buf0[64];
-    __attribute__((aligned(32))) uint8_t buf1[64];
+    __attribute__((aligned(32))) uint8_t state[64];
     __attribute__((aligned(32))) uint8_t key[64];
     __attribute__((aligned(32))) uint8_t tmp[64];
 #endif
 
-    uint8_t *src = buf0;
-    uint8_t *dst = buf1;
-
-    STREEBOG_NAMESPACE(xor_512)(K, m, src);
+    STREEBOG_NAMESPACE(xor_512)(K, m, state);
     memcpy(key, K, 64);
 
     for (int i = 0; i < 12; i++)
     {
-        STREEBOG_NAMESPACE(s_transform)(src, dst);
-
-        uint8_t *t = src; src = dst; dst = t;
-
-        STREEBOG_NAMESPACE(p_transform)(src, dst);
-
-        t = src; src = dst; dst = t;
-
-        STREEBOG_NAMESPACE(l_transform)(src, dst);
-
-        t = src; src = dst; dst = t;
-
-        STREEBOG_NAMESPACE(key_schedule)(key, i, tmp);
-        memcpy(key, tmp, 64);
-
-        STREEBOG_NAMESPACE(xor_512)(src, key, dst);
-
-        t = src; src = dst; dst = t;
+        STREEBOG_NAMESPACE(s_transform)(state, state);
+        STREEBOG_NAMESPACE(p_transform)(state, state);
+        STREEBOG_NAMESPACE(l_transform)(state, state);
+        STREEBOG_NAMESPACE(key_schedule)(key, i, key);
+        STREEBOG_NAMESPACE(xor_512)(state, key, state);
     }
 
-    memcpy(out, src, 64);
+    memcpy(out, state, 64);
 }
 
 // G_n compression function: g(N, h, m)
@@ -316,33 +197,23 @@ void streebog_e_transform(const uint8_t *K, const uint8_t *m, uint8_t *out)
 // when src and dst overlap in the S/P/L pipeline
 void STREEBOG_NAMESPACE(g_n)(const uint8_t *N, const uint8_t *h, const uint8_t *m, uint8_t *out)
 {
-    uint8_t K[64];
-    uint8_t t[64];
-    uint8_t tmp[64];
+    #ifdef _MSC_VER
+        __declspec(align(32)) uint8_t K[64];
+        __declspec(align(32)) uint8_t t[64];
+    #else
+        __attribute__((aligned(32))) uint8_t K[64];
+        __attribute__((aligned(32))) uint8_t t[64];
+    #endif
 
-    // K = h ^ N
     STREEBOG_NAMESPACE(xor_512)(h, N, K);
+    STREEBOG_NAMESPACE(s_transform)(K, K);
+    STREEBOG_NAMESPACE(p_transform)(K, K);
+    STREEBOG_NAMESPACE(l_transform)(K, K);
 
-    // K = S(K)
-    STREEBOG_NAMESPACE(s_transform)(K, tmp);
-    memcpy(K, tmp, 64);
-
-    // K = P(K)
-    STREEBOG_NAMESPACE(p_transform)(K, tmp);
-    memcpy(K, tmp, 64);
-
-    // K = L(K)
-    STREEBOG_NAMESPACE(l_transform)(K, tmp);
-    memcpy(K, tmp, 64);
-
-    // t = E(K, m)
     STREEBOG_NAMESPACE(e_transform)(K, m, t);
 
-    // t = t ^ h
-    STREEBOG_NAMESPACE(xor_512)(t, h, tmp);
-
-    // out = t ^ m
-    STREEBOG_NAMESPACE(xor_512)(tmp, m, out);
+    STREEBOG_NAMESPACE(xor_512)(t, h, t);
+    STREEBOG_NAMESPACE(xor_512)(t, m, out);
 }
 
 // Initialize hash context for 512-bit output

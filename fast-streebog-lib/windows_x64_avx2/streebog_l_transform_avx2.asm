@@ -17,7 +17,7 @@ streebog_l_transform_avx2 PROC
     push    r15
 
     mov     rsi, rcx ; input
-    mov     rdi, rdx ; output
+    mov     rdi, rdx ; output = input
 
     ; Prefetch input block to reduce memory latency
     prefetcht0 [rsi]

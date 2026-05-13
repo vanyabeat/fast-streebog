@@ -118,87 +118,42 @@ EXTERN streebog_p_transform_sse2:PROC
 EXTERN streebog_l_transform_sse2:PROC
 
 streebog_key_schedule_sse2 PROC
-    
-    ; Save registers that will be used
+
     push rbx
     push rsi
     push r12
     push r13
-    push r14 
+    sub rsp, 32                 ; align + shadow space
 
-    ; Allocate stack space for temporary buffers
-    sub rsp, 40                 ; extra stack space / local variables
-    sub rsp, 64                 ; 64 bytes for tmp buffer
-    mov r14, rsp                ; r14 points to tmp buffer
+    mov rsi, rcx                ; K
+    mov r12d, edx               ; i
+    mov r13, r8                 ;out
 
-    ; Move function arguments: K = current key, i = round index, out = output buffer
-    mov rsi, rcx                ; rsi = pointer to K (current key)
-    mov r12d, edx               ; r12d = i (round number)
-    mov r13, r8                 ; r13 = out (where round key will be stored)
-
-    ; Load round constant C_i from C_TABLE
     lea rbx, [C_TABLE]
-    movsxd rax, r12d             ; extend round index to 64-bit
-    mov rbx, QWORD PTR [rbx + rax*8] ; rbx = pointer to C_i
+    movsxd rax, r12d
+    mov rbx, QWORD PTR [rbx + rax*8]
 
-    ; XOR current key with round constant
-    mov rcx, rsi                ; rcx = pointer to K
-    mov rdx, rbx                ; rdx = pointer to C_i
-    mov r8,  r13                ; r8 = output buffer
-    call streebog_xor_512_sse2 ; tmp = K XOR C_i
+    ; out = K ^ C[i]
+    mov rcx, rsi
+    mov rdx, rbx
+    mov r8,  r13
+    call streebog_xor_512_sse2
 
-    ; S-transformation
-    mov rcx, r13 ; input
-    mov rdx, r14 ; output
+    ; S -> P -> L inplace in r13
+    mov rcx, r13
+    mov rdx, r13
     call streebog_s_transform_sse2
 
-    ; Copy tmp buffer back to output
-    movdqu xmm0, XMMWORD PTR [r14]
-    movdqu xmm1, XMMWORD PTR [r14 + 16]
-    movdqu xmm2, XMMWORD PTR [r14 + 32]
-    movdqu xmm3, XMMWORD PTR [r14 + 48]
-
-    movdqu XMMWORD PTR [r13], xmm0
-    movdqu XMMWORD PTR [r13 + 16], xmm1
-    movdqu XMMWORD PTR [r13 + 32], xmm2
-    movdqu XMMWORD PTR [r13 + 48], xmm3
-
-    ; P-transformation
     mov rcx, r13
-    mov rdx, r14
+    mov rdx, r13
     call streebog_p_transform_sse2
 
-    movdqu xmm0, XMMWORD PTR [r14]
-    movdqu xmm1, XMMWORD PTR [r14 + 16]
-    movdqu xmm2, XMMWORD PTR [r14 + 32]
-    movdqu xmm3, XMMWORD PTR [r14 + 48]
-
-    movdqu XMMWORD PTR [r13], xmm0
-    movdqu XMMWORD PTR [r13 + 16], xmm1
-    movdqu XMMWORD PTR [r13 + 32], xmm2
-    movdqu XMMWORD PTR [r13 + 48], xmm3
-
-    ; L-transformation
     mov rcx, r13
-    mov rdx, r14
+    mov rdx, r13
     call streebog_l_transform_sse2
 
-    movdqu xmm0, XMMWORD PTR [r14]
-    movdqu xmm1, XMMWORD PTR [r14 + 16]
-    movdqu xmm2, XMMWORD PTR [r14 + 32]
-    movdqu xmm3, XMMWORD PTR [r14 + 48]
+    add rsp, 32
 
-    movdqu XMMWORD PTR [r13], xmm0
-    movdqu XMMWORD PTR [r13 + 16], xmm1
-    movdqu XMMWORD PTR [r13 + 32], xmm2
-    movdqu XMMWORD PTR [r13 + 48], xmm3
-
-    ; Restore stack space 
-    add rsp, 64
-    add rsp, 40
-
-    ; Restore registers
-    pop r14
     pop r13
     pop r12
     pop rsi

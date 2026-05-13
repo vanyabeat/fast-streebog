@@ -189,7 +189,7 @@ static inline void STREEBOG_NAMESPACE(p_transform_c)(const uint8_t *state, uint8
 // Optimized L-transform using precalculated lookup tables
 // Instead of bit-by-bit XOR (up to 64 operations per block),
 // we use 8 table lookups and 7 XOR operations per block
-static inline void STREEBOG_NAMESPACE(l_transform_c_inline)(const uint8_t *state, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(l_transform_c)(const uint8_t *state, uint8_t *out)
 {
     for (int i = 0; i < 8; i++)
     {
@@ -211,7 +211,7 @@ static inline void STREEBOG_NAMESPACE(l_transform_c_inline)(const uint8_t *state
     }
 }
 
-static inline void STREEBOG_NAMESPACE(key_schedule_c_inline)(const uint8_t *K, int i, uint8_t *out)
+static inline void STREEBOG_NAMESPACE(key_schedule_c)(const uint8_t *K, int i, uint8_t *out)
 {
     uint8_t temp[64];
 
@@ -225,7 +225,7 @@ static inline void STREEBOG_NAMESPACE(key_schedule_c_inline)(const uint8_t *K, i
     STREEBOG_NAMESPACE(p_transform_c)(temp, temp);
 
     // out = L(temp)
-    STREEBOG_NAMESPACE(l_transform_c_inline)(temp, out);
+    STREEBOG_NAMESPACE(l_transform_c)(temp, out);
 }
 
 static inline void STREEBOG_NAMESPACE(e_transform_c)(const uint8_t *K, const uint8_t *m, uint8_t *out)
@@ -249,10 +249,10 @@ static inline void STREEBOG_NAMESPACE(e_transform_c)(const uint8_t *K, const uin
         STREEBOG_NAMESPACE(p_transform_c)(state, state);
 
         // state = L(state)
-        STREEBOG_NAMESPACE(l_transform_c_inline)(state, state);
+        STREEBOG_NAMESPACE(l_transform_c)(state, state);
 
         // K = KeySchedule(K, i)
-        STREEBOG_NAMESPACE(key_schedule_c_inline)(key, i, key);
+        STREEBOG_NAMESPACE(key_schedule_c)(key, i, key);
 
         // state = state ^ K
         STREEBOG_NAMESPACE(xor_512_c)(state, key, state);
@@ -276,7 +276,7 @@ static inline void streebog_g_n_c(const uint8_t *N, const uint8_t *h, const uint
     STREEBOG_NAMESPACE(p_transform_c)(K, K);
 
     // K = L(K)
-    STREEBOG_NAMESPACE(l_transform_c_inline)(K, K);
+    STREEBOG_NAMESPACE(l_transform_c)(K, K);
 
     // t = E(K, m)
     STREEBOG_NAMESPACE(e_transform_c)(K, m, t);
@@ -287,5 +287,12 @@ static inline void streebog_g_n_c(const uint8_t *N, const uint8_t *h, const uint
     // out = t ^ m
     STREEBOG_NAMESPACE(xor_512_c)(t, m, out);
 }
+
+#define streebog_s_transform_c   STREEBOG_NAMESPACE(s_transform_c)
+#define streebog_p_transform_c   STREEBOG_NAMESPACE(p_transform_c)
+#define streebog_l_transform_c   STREEBOG_NAMESPACE(l_transform_c)
+#define streebog_xor_512_c       STREEBOG_NAMESPACE(xor_512_c)
+#define streebog_add_512_c       STREEBOG_NAMESPACE(add_512_c)
+#define streebog_key_schedule_c  STREEBOG_NAMESPACE(key_schedule_c)
 
 #endif // STREEBOG_IMPL_H

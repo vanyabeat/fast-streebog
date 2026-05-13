@@ -118,56 +118,43 @@ EXTERN streebog_l_transform_avx512:PROC
 
 streebog_key_schedule_avx512 PROC
 
-    ; Save registers that will be used 
     push rbx
     push rsi
     push r12
     push r13
-    push r14
-    sub  rsp, 40        ; allocate small scratch space on stack
+    sub  rsp, 32        ; align + shadow space
 
-    sub  rsp, 64        ; allocate 64-byte temporary buffer
-    mov  r14, rsp       ; r14 points to tmp buffer
-    mov rsi,  rcx       ; rsi = K (input key)
-    mov r12d, edx       ; r12d = round index
-    mov r13,  r8        ; r13 = output pointer
+    mov rsi,  rcx
+    mov r12d, edx
+    mov r13,  r8
 
-    lea  rbx, [C_TABLE]                     ; rbx points to C constants table
+    lea  rbx, [C_TABLE]
     movsxd rax, r12d
-    mov  rbx, QWORD PTR [rbx + rax*8]       ; rbx = address of C[round]
+    mov  rbx, QWORD PTR [rbx + rax*8]
 
-    ; XOR input key K with C[round]
-    vmovdqu64 zmm0, ZMMWORD PTR [rsi]       ; load K
-    vmovdqu64 zmm1, ZMMWORD PTR [rbx]       ; load C[round]
-    vpxorq    zmm0, zmm0, zmm1              ; XOR K ^ C[round]
-    vmovdqu64 ZMMWORD PTR [r13], zmm0       ; store result to output
-
-    ; S-box transformation
-    mov rcx, r13 ; rcx = output pointer
-    mov rdx, r14 ; rdx = tmp buffer pointer
-    call streebog_s_transform_avx512
-    vmovdqu64 zmm0, ZMMWORD PTR [r14]       ; load tmp
-    vmovdqu64 ZMMWORD PTR [r13], zmm0       ; store back to output
-
-    ; P-transposition
-    mov rcx, r13                            ; rcx = output pointer
-    mov rdx, r14                            ; rdx = tmp buffer pointer
-    call streebog_p_transform_avx512
-    vmovdqu64 zmm0, ZMMWORD PTR [r14]
+    ; out = K ^ C[i]
+    vmovdqu64 zmm0, ZMMWORD PTR [rsi]
+    vmovdqu64 zmm1, ZMMWORD PTR [rbx]
+    vpxorq    zmm0, zmm0, zmm1
     vmovdqu64 ZMMWORD PTR [r13], zmm0
 
-    ; L-linear transformation
+    ; S -> P -> L inplace in r13
     mov rcx, r13
-    mov rdx, r14
+    mov rdx, r13
+    call streebog_s_transform_avx512
+
+    mov rcx, r13
+    mov rdx, r13
+    call streebog_p_transform_avx512
+
+    mov rcx, r13
+    mov rdx, r13
     call streebog_l_transform_avx512
-    vmovdqu64 zmm0, ZMMWORD PTR [r14]
-    vmovdqu64 ZMMWORD PTR [r13], zmm0
 
-    vzeroupper                              ; clear upper parts of YMM/ZMM registers
+    vzeroupper
 
-    add  rsp, 64                            ; deallocate tmp buffer
-    add  rsp, 40                            ; deallocate scratch space
-    pop  r14
+    add  rsp, 32
+
     pop  r13
     pop  r12
     pop  rsi
@@ -175,5 +162,4 @@ streebog_key_schedule_avx512 PROC
     ret
 
 streebog_key_schedule_avx512 ENDP
-END
 END

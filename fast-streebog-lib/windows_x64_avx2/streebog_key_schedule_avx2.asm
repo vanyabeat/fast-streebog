@@ -121,78 +121,52 @@ EXTERN streebog_l_transform_avx2:PROC
 
 streebog_key_schedule_avx2 PROC
 
-    ; Save callee-saved registers
     push rbx
     push rsi
     push r12
     push r13
-    push r14
 
-    ; Allocate local stack buffers
-    sub rsp, 40                 ; 5 * 8 = 40 байт
-    sub rsp, 64
-    mov r14, rsp                ; pointer tmp buffer
+    ; Preserve 16-byte stack alignment before calls:
+    ; 5 pushes = 40 bytes, so RSP is misaligned by 8.
+    ; Allocate 8-byte padding + 32-byte shadow space.
 
-    mov rsi, rcx                ; K (key input)
-    mov r12d, edx               ; i (iteration index)
-    mov r13, r8                 ; out (output buffer)
+    sub rsp, 32
 
-    ; Load round constant from C_TABLE
+    mov rsi, rcx                ; K
+    mov r12d, edx               ; i
+    mov r13, r8                 ; out
+
     lea rbx, [C_TABLE]
-    movsxd rax, r12d            ; extend i to 64-bit for addressing
+    movsxd rax, r12d
     mov rbx, QWORD PTR [rbx + rax*8]
 
-    ; XOR with round constant
-    mov rcx, rsi                ; input key
+    ; out = K ^ C[i]
+    mov rcx, rsi                ; K
     mov rdx, rbx                ; round constant
-    mov r8,  r13                ; output buffer
+    mov r8,  r13                ; out
     call streebog_xor_512_avx2
 
-    ; S-box transformation
-    mov rcx, r13                ; input = XOR output
-    mov rdx, r14                ; temporary buffer 
+    ; S -> P -> L inplace in r13
+    mov rcx, r13
+    mov rdx, r13
     call streebog_s_transform_avx2
 
-    ; Store transformed result back to output buffer
-    vmovdqu ymm0, YMMWORD PTR [r14]
-    vmovdqu ymm1, YMMWORD PTR [r14+32]
-    vmovdqu YMMWORD PTR [r13],    ymm0
-    vmovdqu YMMWORD PTR [r13+32], ymm1
-
-    ; P-permutation
-    mov rcx, r13                ; input buffer
-    mov rdx, r14                ; temporary buffer
+    mov rcx, r13
+    mov rdx, r13
     call streebog_p_transform_avx2
 
-    ; Store permuted result
-    vmovdqu ymm0, YMMWORD PTR [r14]
-    vmovdqu ymm1, YMMWORD PTR [r14+32]
-    vmovdqu YMMWORD PTR [r13],    ymm0
-    vmovdqu YMMWORD PTR [r13+32], ymm1
-
-    ; Linear transformation
-    mov rcx, r13                ; input buffer
-    mov rdx, r14                ; temporary buffer
+    mov rcx, r13
+    mov rdx, r13
     call streebog_l_transform_avx2
 
-    ; Store final L-transformed key
-    vmovdqu ymm0, YMMWORD PTR [r14]
-    vmovdqu ymm1, YMMWORD PTR [r14+32]
-    vmovdqu YMMWORD PTR [r13],    ymm0
-    vmovdqu YMMWORD PTR [r13+32], ymm1
+    add rsp, 32
 
-    ; Release stack buffers
-    add rsp, 64
-    add rsp, 40
-
-    ; Restore callee-saved registers
-    pop r14
     pop r13
     pop r12
     pop rsi
     pop rbx
 
-    vzeroupper                  ; clear upper halves of AVX registers
+    vzeroupper
     ret
 
 streebog_key_schedule_avx2 ENDP
