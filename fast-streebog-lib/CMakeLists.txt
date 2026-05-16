@@ -23,7 +23,6 @@ if(USE_ASM)
     if(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     enable_language(ASM_MASM)
 
-    # AVX-512 (папка windows_x64)
     set(ASM_SOURCES_AVX512
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_avx512/streebog_xor_512_avx512.asm
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_avx512/streebog_add_512_avx512.asm
@@ -33,7 +32,6 @@ if(USE_ASM)
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_avx512/streebog_key_schedule_avx512.asm
     )
 
-    # AVX2
     set(ASM_SOURCES_AVX2
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_avx2/streebog_xor_512_avx2.asm
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_avx2/streebog_add_512_avx2.asm
@@ -52,7 +50,6 @@ if(USE_ASM)
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_ssse3/streebog_key_schedule_ssse3.asm
     )
 
-    # SSE2
     set(ASM_SOURCES_SSE2
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_sse2/streebog_xor_512_sse2.asm
         ${CMAKE_CURRENT_SOURCE_DIR}/windows_x64_sse2/streebog_add_512_sse2.asm
@@ -77,7 +74,6 @@ if(USE_ASM)
     message(STATUS "Using Windows x64 MASM optimizations (AVX512 + AVX2 + SSSE3 + SSE2)")
 
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-        # ARM64 — без изменений
         set(ASM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/unix_arm64/streebog_xor_512.S
             ${CMAKE_CURRENT_SOURCE_DIR}/unix_arm64/streebog_add_512.S
@@ -97,6 +93,7 @@ if(USE_ASM)
         endforeach()
         set(USE_PLATFORM_ASM ON)
         message(STATUS "Using ARM64 NEON optimizations")
+
     else()
         message(STATUS "No ASM optimizations for this platform, using C fallback")
     endif()
@@ -179,7 +176,7 @@ if(USE_PLATFORM_ASM)
         # Enable ARM64 optimizations
         target_compile_options(fast-streebog-lib PRIVATE -march=armv8-a+crypto)
         target_compile_options(fast-streebog-dll PRIVATE -march=armv8-a+crypto)
-    endif()
+endif()
 endif()
 
 # ==================== Release Distribution ====================

@@ -12,7 +12,7 @@
 #ifdef _MSC_VER
 #include <intrin.h>
 
-// ==================== CPU feature detection (x86/x64) ====================
+// CPU feature detection (x86/x64)
 // Uses CPUID + XGETBV to verify both CPU support and OS-level SIMD enablement
 // before checking AVX/AVX2/AVX-512 feature bits.
 static inline int has_avx2(void)

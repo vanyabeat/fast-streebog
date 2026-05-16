@@ -20,6 +20,7 @@
 
 // External ASM function declarations
 #ifdef STREEBOG_USE_ASM
+
 #if defined(_MSC_VER)
     DECLARE_ASM_VARIANT(avx512);
     DECLARE_ASM_VARIANT(avx2);
@@ -75,7 +76,7 @@ static void init_impl(void)
     if      (has_avx512()) ASSIGN_IMPL(avx512);
     else if (has_avx2())   ASSIGN_IMPL(avx2);
     else if (has_ssse3())  ASSIGN_IMPL(ssse3);
-    else                    ASSIGN_IMPL(sse2);
+    else                    ASSIGN_IMPL(sse2); 
 
 #elif defined(__aarch64__) || defined(__arm64__)
     g_impl.xor_512      = streebog_xor_512;
@@ -120,7 +121,7 @@ STREEBOG_API const char *STREEBOG_NAMESPACE(version)(void)
 
 // Public API wrappers — dispatch to the selected implementation via g_impl
 // Only compiled on MSVC/x86; on AArch64 these are called directly from ASM
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__amd64__)))
 void STREEBOG_NAMESPACE(xor_512)(const uint8_t *a, const uint8_t *b, uint8_t *out)
 {
     ENSURE_IMPL();
@@ -167,11 +168,9 @@ void streebog_e_transform(const uint8_t *K, const uint8_t *m, uint8_t *out)
 #ifdef _MSC_VER
     __declspec(align(32)) uint8_t state[64];
     __declspec(align(32)) uint8_t key[64];
-    __declspec(align(32)) uint8_t tmp[64];
 #else
     __attribute__((aligned(32))) uint8_t state[64];
     __attribute__((aligned(32))) uint8_t key[64];
-    __attribute__((aligned(32))) uint8_t tmp[64];
 #endif
 
     STREEBOG_NAMESPACE(xor_512)(K, m, state);
@@ -193,8 +192,6 @@ void streebog_e_transform(const uint8_t *K, const uint8_t *m, uint8_t *out)
 // K = L(P(S(h ^ N)))
 // t = E(K, m)
 // return t ^ h ^ m
-// Intermediate results are staged through tmp[] to prevent aliasing issues
-// when src and dst overlap in the S/P/L pipeline
 void STREEBOG_NAMESPACE(g_n)(const uint8_t *N, const uint8_t *h, const uint8_t *m, uint8_t *out)
 {
     #ifdef _MSC_VER

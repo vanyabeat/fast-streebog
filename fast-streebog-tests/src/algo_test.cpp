@@ -1080,7 +1080,7 @@ static const Impl IMPLS[] = {
         streebog_s_transform_sse2, streebog_p_transform_sse2, streebog_l_transform_sse2,
         streebog_xor_512_sse2, streebog_add_512_sse2, streebog_key_schedule_sse2
     },
-    {
+        {
         "SSSE3", has_ssse3,
         streebog_s_transform_ssse3, streebog_p_transform_ssse3, streebog_l_transform_ssse3,
         streebog_xor_512_ssse3, streebog_add_512_ssse3, streebog_key_schedule_ssse3
