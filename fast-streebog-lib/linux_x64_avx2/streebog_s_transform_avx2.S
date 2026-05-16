@@ -1,5 +1,4 @@
 .intel_syntax noprefix
-пше
     .section .rodata
     .align 32
 
@@ -148,3 +147,4 @@ streebog_s_transform_avx2:
     ret
 
     .size streebog_s_transform_avx2, . - streebog_s_transform_avx2
+    .section .note.GNU-stack,"",@progbits

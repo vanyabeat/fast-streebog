@@ -12,7 +12,7 @@ streebog_l_transform_avx2:
     push    r13
     push    r14
     push    r15
-    push    rbp                 # 6 pushes = 48 bytes, RSP misaligned by 8
+    push    rbp                 # 6 pushes = 48 bytes
     sub     rsp, 8              # align to 16
 
     mov     rbp, rdi            # input
@@ -259,3 +259,4 @@ streebog_l_transform_avx2:
     ret
 
     .size streebog_l_transform_avx2, . - streebog_l_transform_avx2
+    .section .note.GNU-stack,"",@progbits

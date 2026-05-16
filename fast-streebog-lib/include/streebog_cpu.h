@@ -49,6 +49,7 @@ static inline int has_avx512(void)
 }
 
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__amd64__))
+#include <cpuid.h>
 
 static int has_avx2(void) {
     unsigned int eax, ebx, ecx, edx;

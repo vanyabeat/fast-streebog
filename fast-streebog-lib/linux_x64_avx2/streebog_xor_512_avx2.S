@@ -20,3 +20,4 @@ streebog_xor_512_avx2:
     ret
 
     .size streebog_xor_512_avx2, . - streebog_xor_512_avx2
+    .section .note.GNU-stack,"",@progbits

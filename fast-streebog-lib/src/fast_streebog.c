@@ -83,7 +83,7 @@ static void init_impl(void)
     else                    ASSIGN_IMPL(sse2);
 
  #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__amd64__))
-    else if (has_avx2())   ASSIGN_IMPL(avx2);
+    if (has_avx2())   ASSIGN_IMPL(avx2);
     else if (has_ssse3())  ASSIGN_IMPL(ssse3);
 
 #elif defined(__aarch64__) || defined(__arm64__)
@@ -176,11 +176,9 @@ void streebog_e_transform(const uint8_t *K, const uint8_t *m, uint8_t *out)
 #ifdef _MSC_VER
     __declspec(align(32)) uint8_t state[64];
     __declspec(align(32)) uint8_t key[64];
-    __declspec(align(32)) uint8_t tmp[64];
 #else
     __attribute__((aligned(32))) uint8_t state[64];
     __attribute__((aligned(32))) uint8_t key[64];
-    __attribute__((aligned(32))) uint8_t tmp[64];
 #endif
 
     STREEBOG_NAMESPACE(xor_512)(K, m, state);

@@ -115,3 +115,4 @@ streebog_p_transform_avx2:
     ret
 
     .size streebog_p_transform_avx2, . - streebog_p_transform_avx2
+    .section .note.GNU-stack,"",@progbits

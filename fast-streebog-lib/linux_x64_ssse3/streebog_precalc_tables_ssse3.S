@@ -4,6 +4,7 @@
     .align 16
 
     .globl Ax_COL0
+    .hidden Ax_COL0
 Ax_COL0:
     .quad 0x0000000000000000
     .quad 0x83478B07B2468764
@@ -263,6 +264,7 @@ Ax_COL0:
     .quad 0x7EF6D5C75C09A57C
 
     .globl Ax_COL1
+    .hidden Ax_COL1
 Ax_COL1:
     .quad 0x0000000000000000
     .quad 0x46B60F011A83988E
@@ -522,6 +524,7 @@ Ax_COL1:
     .quad 0x09876CFF037E82F1
 
     .globl Ax_COL2
+    .hidden Ax_COL2
 Ax_COL2:
     .quad 0x0000000000000000
     .quad 0xACCC9CA9328A8950
@@ -781,6 +784,7 @@ Ax_COL2:
     .quad 0x842359A03E2A367A
 
     .globl Ax_COL3
+    .hidden Ax_COL3
 Ax_COL3:
     .quad 0x0000000000000000
     .quad 0x0321658CBA93C138
@@ -1040,6 +1044,7 @@ Ax_COL3:
     .quad 0x1C698312F735AC76
 
     .globl Ax_COL4
+    .hidden Ax_COL4
 Ax_COL4:
     .quad 0x0000000000000000
     .quad 0x5B068C651810A89E
@@ -1299,6 +1304,7 @@ Ax_COL4:
     .quad 0xCD381283E04B5FBA
 
     .globl Ax_COL5
+    .hidden Ax_COL5
 Ax_COL5:
     .quad 0x0000000000000000
     .quad 0xF97D86D98A327728
@@ -1558,6 +1564,7 @@ Ax_COL5:
     .quad 0xDA635A4C2A3E2B3D
 
     .globl Ax_COL6
+    .hidden Ax_COL6
 Ax_COL6:
     .quad 0x0000000000000000
     .quad 0xA48B474F9EF5DC18
@@ -1817,6 +1824,7 @@ Ax_COL6:
     .quad 0x2FD5F65DBAAA68E0
 
     .globl Ax_COL7
+    .hidden Ax_COL7
 Ax_COL7:
     .quad 0x0000000000000000
     .quad 0x641C314B2B8EE083

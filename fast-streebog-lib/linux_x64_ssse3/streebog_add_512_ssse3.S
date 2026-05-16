@@ -39,3 +39,4 @@ add_loop:
     ret
 
     .size streebog_add_512_ssse3, . - streebog_add_512_ssse3
+    .section .note.GNU-stack,"",@progbits

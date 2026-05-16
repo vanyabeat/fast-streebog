@@ -106,7 +106,7 @@ if(USE_ASM)
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_avx2/streebog_p_transform_avx2.S
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_avx2/streebog_l_transform_avx2.S
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_avx2/streebog_key_schedule_avx2.S
-            ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_avx2/streebog_precalc_avx2.S
+            ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_avx2/streebog_precalc_tables_avx2.S
         )
         set(ASM_SOURCES_SSSE3
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_ssse3/streebog_xor_512_ssse3.S
@@ -115,6 +115,7 @@ if(USE_ASM)
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_ssse3/streebog_p_transform_ssse3.S
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_ssse3/streebog_l_transform_ssse3.S
             ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_ssse3/streebog_key_schedule_ssse3.S
+            ${CMAKE_CURRENT_SOURCE_DIR}/linux_x64_ssse3/streebog_precalc_tables_ssse3.S
         )
         set(ASM_SOURCES ${ASM_SOURCES_AVX2} ${ASM_SOURCES_SSSE3})
 
@@ -211,8 +212,8 @@ if(USE_PLATFORM_ASM)
         target_compile_options(fast-streebog-lib PRIVATE -march=armv8-a+crypto)
         target_compile_options(fast-streebog-dll PRIVATE -march=armv8-a+crypto)
     elseif(UNIX AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-        target_compile_options(fast-streebog-lib PRIVATE -g)
-        target_compile_options(fast-streebog-dll PRIVATE -g)
+        target_compile_options(fast-streebog-lib PRIVATE -O3 -march=native)
+        target_compile_options(fast-streebog-dll PRIVATE -O3 -march=native)
     endif()
 endif()
 

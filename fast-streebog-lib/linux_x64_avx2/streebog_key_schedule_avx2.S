@@ -100,18 +100,18 @@ C_11:
     .byte 0x99, 0x48, 0xbc, 0x92, 0x4a, 0xf1, 0x1b, 0xd7, 0x20
 
 C_TABLE:
-    .quad C_0
-    .quad C_1
-    .quad C_2
-    .quad C_3
-    .quad C_4
-    .quad C_5
-    .quad C_6
-    .quad C_7
-    .quad C_8
-    .quad C_9
-    .quad C_10
-    .quad C_11
+    .quad C_0 - C_TABLE
+    .quad C_1 - C_TABLE
+    .quad C_2 - C_TABLE
+    .quad C_3 - C_TABLE
+    .quad C_4 - C_TABLE
+    .quad C_5 - C_TABLE
+    .quad C_6 - C_TABLE
+    .quad C_7 - C_TABLE
+    .quad C_8 - C_TABLE
+    .quad C_9 - C_TABLE
+    .quad C_10 - C_TABLE
+    .quad C_11 - C_TABLE
 
     .section .text
     .align 16
@@ -132,7 +132,8 @@ streebog_key_schedule_avx2:
     # load C[i]
     lea rbx, [rip + C_TABLE]
     movsxd rax, r13d
-    mov rbx, QWORD PTR [rbx + rax*8]
+    mov rax, [rbx + rax*8]
+    add rbx, rax
 
     # out = K ^ C[i]
     mov rdi, r12
@@ -162,3 +163,4 @@ streebog_key_schedule_avx2:
     ret
 
     .size streebog_key_schedule_avx2, . - streebog_key_schedule_avx2
+    .section .note.GNU-stack,"",@progbits

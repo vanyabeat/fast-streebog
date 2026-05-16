@@ -1080,7 +1080,7 @@ struct Impl {
 static int always() { return 1; }
 
 static const Impl IMPLS[] = {
-#if defiend(_MSC_VER)
+#if defined(_MSC_VER)
     {
         "SSE2", always,
         streebog_s_transform_sse2, streebog_p_transform_sse2, streebog_l_transform_sse2,
@@ -1097,7 +1097,7 @@ static const Impl IMPLS[] = {
         streebog_s_transform_avx2, streebog_p_transform_avx2, streebog_l_transform_avx2,
         streebog_xor_512_avx2, streebog_add_512_avx2, streebog_key_schedule_avx2
     },
-#if defiend(_MSC_VER)
+#if defined(_MSC_VER)
     {
         "AVX512", has_avx512,
         streebog_s_transform_avx512, streebog_p_transform_avx512, streebog_l_transform_avx512,

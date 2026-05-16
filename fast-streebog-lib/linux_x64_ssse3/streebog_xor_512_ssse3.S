@@ -25,3 +25,4 @@ streebog_xor_512_ssse3:
     ret
 
     .size streebog_xor_512_ssse3, . - streebog_xor_512_ssse3
+    .section .note.GNU-stack,"",@progbits

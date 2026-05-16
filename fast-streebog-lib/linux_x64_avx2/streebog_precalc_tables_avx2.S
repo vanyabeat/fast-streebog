@@ -4,6 +4,7 @@
     .align 16
 
     .globl Ax_T
+    .hidden Ax_T
 Ax_T:
 
 # v = 0x00
@@ -2565,4 +2566,6 @@ Ax_T:
     .quad 0xDA635A4C2A3E2B3D
     .quad 0x2FD5F65DBAAA68E0
     .quad 0x7C3B228621F1C57E
+
+.section .note.GNU-stack,"",@progbits
 
