@@ -1,5 +1,5 @@
-# Fast Streebog
-
+# Fast Assembly GOST R 34.11-2012 STREEBOG HASH FUNCTION
+ 
 High-performance implementation of the GOST R 34.11-2012 (Streebog) cryptographic hash function with platform-specific assembly optimizations.
 
 ## Overview
