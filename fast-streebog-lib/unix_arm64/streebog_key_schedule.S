@@ -13,7 +13,7 @@
     #define PRIVATE_GLOBAL .hidden
 #endif
 
-// Macro for loading address (works on both macOS and Linux)
+// Macro for loading address (works on both macOS and Linux) 
 #ifdef __APPLE__
 .macro load_address reg, sym
     adrp    \reg, \sym@PAGE

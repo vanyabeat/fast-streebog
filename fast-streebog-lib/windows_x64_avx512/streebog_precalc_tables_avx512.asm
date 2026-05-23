@@ -1,5 +1,5 @@
 ; Precalculated lookup tables for optimized Streebog L-transform
-; This file contains Ax[8][256] lookup table
+; This file contains Ax[8][256] lookup table 
 ; Total size: 8 * 256 * 8 bytes = 16 KB
 
 .data

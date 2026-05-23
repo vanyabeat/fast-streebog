@@ -1,0 +1,178 @@
+.intel_syntax noprefix
+    .section .rodata
+    .align 16
+
+SBOX_ROW_0:  .byte 0xFC,0xEE,0xDD,0x11,0xCF,0x6E,0x31,0x16,0xFB,0xC4,0xFA,0xDA,0x23,0xC5,0x04,0x4D
+SBOX_ROW_1:  .byte 0xE9,0x77,0xF0,0xDB,0x93,0x2E,0x99,0xBA,0x17,0x36,0xF1,0xBB,0x14,0xCD,0x5F,0xC1
+SBOX_ROW_2:  .byte 0xF9,0x18,0x65,0x5A,0xE2,0x5C,0xEF,0x21,0x81,0x1C,0x3C,0x42,0x8B,0x01,0x8E,0x4F
+SBOX_ROW_3:  .byte 0x05,0x84,0x02,0xAE,0xE3,0x6A,0x8F,0xA0,0x06,0x0B,0xED,0x98,0x7F,0xD4,0xD3,0x1F
+SBOX_ROW_4:  .byte 0xEB,0x34,0x2C,0x51,0xEA,0xC8,0x48,0xAB,0xF2,0x2A,0x68,0xA2,0xFD,0x3A,0xCE,0xCC
+SBOX_ROW_5:  .byte 0xB5,0x70,0x0E,0x56,0x08,0x0C,0x76,0x12,0xBF,0x72,0x13,0x47,0x9C,0xB7,0x5D,0x87
+SBOX_ROW_6:  .byte 0x15,0xA1,0x96,0x29,0x10,0x7B,0x9A,0xC7,0xF3,0x91,0x78,0x6F,0x9D,0x9E,0xB2,0xB1
+SBOX_ROW_7:  .byte 0x32,0x75,0x19,0x3D,0xFF,0x35,0x8A,0x7E,0x6D,0x54,0xC6,0x80,0xC3,0xBD,0x0D,0x57
+SBOX_ROW_8:  .byte 0xDF,0xF5,0x24,0xA9,0x3E,0xA8,0x43,0xC9,0xD7,0x79,0xD6,0xF6,0x7C,0x22,0xB9,0x03
+SBOX_ROW_9:  .byte 0xE0,0x0F,0xEC,0xDE,0x7A,0x94,0xB0,0xBC,0xDC,0xE8,0x28,0x50,0x4E,0x33,0x0A,0x4A
+SBOX_ROW_A:  .byte 0xA7,0x97,0x60,0x73,0x1E,0x00,0x62,0x44,0x1A,0xB8,0x38,0x82,0x64,0x9F,0x26,0x41
+SBOX_ROW_B:  .byte 0xAD,0x45,0x46,0x92,0x27,0x5E,0x55,0x2F,0x8C,0xA3,0xA5,0x7D,0x69,0xD5,0x95,0x3B
+SBOX_ROW_C:  .byte 0x07,0x58,0xB3,0x40,0x86,0xAC,0x1D,0xF7,0x30,0x37,0x6B,0xE4,0x88,0xD9,0xE7,0x89
+SBOX_ROW_D:  .byte 0xE1,0x1B,0x83,0x49,0x4C,0x3F,0xF8,0xFE,0x8D,0x53,0xAA,0x90,0xCA,0xD8,0x85,0x61
+SBOX_ROW_E:  .byte 0x20,0x71,0x67,0xA4,0x2D,0x2B,0x09,0x5B,0xCB,0x9B,0x25,0xD0,0xBE,0xE5,0x6C,0x52
+SBOX_ROW_F:  .byte 0x59,0xA6,0x74,0xD2,0xE6,0xF4,0xB4,0xC0,0xD1,0x66,0xAF,0xC2,0x39,0x4B,0x63,0xB6
+
+# offset 256: low nibble mask
+MASK_0F:     .fill 16, 1, 0x0F
+
+# offsets 272..512: extraction tables (16 bytes each, 16 tables)
+EXT_00:      .fill 16, 1, 0x00
+EXT_01:      .fill 16, 1, 0x01
+EXT_02:      .fill 16, 1, 0x02
+EXT_03:      .fill 16, 1, 0x03
+EXT_04:      .fill 16, 1, 0x04
+EXT_05:      .fill 16, 1, 0x05
+EXT_06:      .fill 16, 1, 0x06
+EXT_07:      .fill 16, 1, 0x07
+EXT_08:      .fill 16, 1, 0x08
+EXT_09:      .fill 16, 1, 0x09
+EXT_0A:      .fill 16, 1, 0x0A
+EXT_0B:      .fill 16, 1, 0x0B
+EXT_0C:      .fill 16, 1, 0x0C
+EXT_0D:      .fill 16, 1, 0x0D
+EXT_0E:      .fill 16, 1, 0x0E
+EXT_0F:      .fill 16, 1, 0x0F
+
+.macro TWO_ROWS row_off, ext_off
+    movdqa  xmm3,  [r14 + \row_off]
+    pshufb  xmm3,  xmm1
+    movdqa  xmm4,  [r14 + \ext_off]
+    pcmpeqb xmm4,  xmm2
+    pand    xmm3,  xmm4
+    por     xmm5,  xmm3
+
+    movdqa  xmm12, [r14 + \row_off]
+    pshufb  xmm12, xmm9
+    movdqa  xmm13, [r14 + \ext_off]
+    pcmpeqb xmm13, xmm11
+    pand    xmm12, xmm13
+    por     xmm10, xmm12
+.endm
+
+    .section .text
+    .align 16
+    .globl streebog_s_transform_ssse3
+    .type  streebog_s_transform_ssse3, @function
+
+streebog_s_transform_ssse3:
+
+    push    r14
+    push    r15                 # 2 pushes = 16 bytes, RSP already aligned
+    sub     rsp, 128            # 8 * 16 bytes for XMM save
+
+    # save XMM registers 
+    movdqu  [rsp +   0], xmm6
+    movdqu  [rsp +  16], xmm7
+    movdqu  [rsp +  32], xmm8
+    movdqu  [rsp +  48], xmm9
+    movdqu  [rsp +  64], xmm10
+    movdqu  [rsp +  80], xmm11
+    movdqu  [rsp +  96], xmm12
+    movdqu  [rsp + 112], xmm13
+
+    lea     r14, [rip + SBOX_ROW_0]
+
+    # first 32 bytes
+    movdqu  xmm0, [rdi]
+    movdqu  xmm8, [rdi + 16]
+
+    movdqa  xmm6, [r14 + 256]  # low nibble mask
+
+    movdqa  xmm1, xmm0
+    pand    xmm1, xmm6          # lo nibbles block 0
+    movdqa  xmm9, xmm8
+    pand    xmm9, xmm6          # lo nibbles block 1
+
+    movdqa  xmm2, xmm0
+    psrlw   xmm2, 4
+    pand    xmm2, xmm6          # hi nibbles block 0
+    movdqa  xmm11, xmm8
+    psrlw   xmm11, 4
+    pand    xmm11, xmm6         # hi nibbles block 1
+
+    pxor    xmm5,  xmm5
+    pxor    xmm10, xmm10
+
+    TWO_ROWS   0, 272
+    TWO_ROWS  16, 288
+    TWO_ROWS  32, 304
+    TWO_ROWS  48, 320
+    TWO_ROWS  64, 336
+    TWO_ROWS  80, 352
+    TWO_ROWS  96, 368
+    TWO_ROWS 112, 384
+    TWO_ROWS 128, 400
+    TWO_ROWS 144, 416
+    TWO_ROWS 160, 432
+    TWO_ROWS 176, 448
+    TWO_ROWS 192, 464
+    TWO_ROWS 208, 480
+    TWO_ROWS 224, 496
+    TWO_ROWS 240, 512
+
+    movdqu  [rsi],      xmm5
+    movdqu  [rsi + 16], xmm10
+
+    # next 32 bytes
+    movdqu  xmm0, [rdi + 32]
+    movdqu  xmm8, [rdi + 48]
+
+    movdqa  xmm1, xmm0
+    pand    xmm1, xmm6
+    movdqa  xmm9, xmm8
+    pand    xmm9, xmm6
+
+    movdqa  xmm2, xmm0
+    psrlw   xmm2, 4
+    pand    xmm2, xmm6
+    movdqa  xmm11, xmm8
+    psrlw   xmm11, 4
+    pand    xmm11, xmm6
+
+    pxor    xmm5,  xmm5
+    pxor    xmm10, xmm10
+
+    TWO_ROWS   0, 272
+    TWO_ROWS  16, 288
+    TWO_ROWS  32, 304
+    TWO_ROWS  48, 320
+    TWO_ROWS  64, 336
+    TWO_ROWS  80, 352
+    TWO_ROWS  96, 368
+    TWO_ROWS 112, 384
+    TWO_ROWS 128, 400
+    TWO_ROWS 144, 416
+    TWO_ROWS 160, 432
+    TWO_ROWS 176, 448
+    TWO_ROWS 192, 464
+    TWO_ROWS 208, 480
+    TWO_ROWS 224, 496
+    TWO_ROWS 240, 512
+
+    movdqu  [rsi + 32], xmm5
+    movdqu  [rsi + 48], xmm10
+
+    # restore XMM
+    movdqu  xmm6,  [rsp +   0]
+    movdqu  xmm7,  [rsp +  16]
+    movdqu  xmm8,  [rsp +  32]
+    movdqu  xmm9,  [rsp +  48]
+    movdqu  xmm10, [rsp +  64]
+    movdqu  xmm11, [rsp +  80]
+    movdqu  xmm12, [rsp +  96]
+    movdqu  xmm13, [rsp + 112]
+
+    add     rsp, 128
+    pop     r15
+    pop     r14
+    ret
+
+    .size streebog_s_transform_ssse3, . - streebog_s_transform_ssse3
+    .section .note.GNU-stack,"",@progbits

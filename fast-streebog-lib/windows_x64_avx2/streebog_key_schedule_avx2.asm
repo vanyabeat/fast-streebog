@@ -114,51 +114,60 @@ C_TABLE:
 .code
 
 
-EXTERN streebog_xor_512:PROC
-EXTERN streebog_s_transform:PROC
-EXTERN streebog_p_transform:PROC
-EXTERN streebog_l_transform:PROC
+EXTERN streebog_xor_512_avx2:PROC
+EXTERN streebog_s_transform_avx2:PROC
+EXTERN streebog_p_transform_avx2:PROC
+EXTERN streebog_l_transform_avx2:PROC
 
-streebog_key_schedule PROC
-    
+streebog_key_schedule_avx2 PROC
+
     push rbx
     push rsi
     push r12
     push r13
-    
-    sub rsp, 40         
 
-    mov rsi, rcx        
-    mov r12d, edx       
-    mov r13, r8         
-    
-    
+    ; Preserve 16-byte stack alignment before calls:
+    ; 5 pushes = 40 bytes, so RSP is misaligned by 8.
+    ; Allocate 8-byte padding + 32-byte shadow space.
+
+    sub rsp, 32
+
+    mov rsi, rcx                ; K
+    mov r12d, edx               ; i
+    mov r13, r8                 ; out
+
     lea rbx, [C_TABLE]
     movsxd rax, r12d
-    mov rbx, QWORD PTR [rbx + rax*8]  
-    
-    mov rcx, rsi        
-    mov rdx, rbx        
-    mov r8, r13         
-    call streebog_xor_512
-    
-    mov rcx, r13        
-    mov rdx, r13        
-    call streebog_s_transform
-    
-    mov rcx, r13        
-    mov rdx, r13        
-    call streebog_p_transform
-    
-    mov rcx, r13        
-    mov rdx, r13        
-    call streebog_l_transform
-    
-    add rsp, 40
+    mov rbx, QWORD PTR [rbx + rax*8]
+
+    ; out = K ^ C[i]
+    mov rcx, rsi                ; K
+    mov rdx, rbx                ; round constant
+    mov r8,  r13                ; out
+    call streebog_xor_512_avx2
+
+    ; S -> P -> L inplace in r13
+    mov rcx, r13
+    mov rdx, r13
+    call streebog_s_transform_avx2
+
+    mov rcx, r13
+    mov rdx, r13
+    call streebog_p_transform_avx2
+
+    mov rcx, r13
+    mov rdx, r13
+    call streebog_l_transform_avx2
+
+    add rsp, 32
+
     pop r13
     pop r12
     pop rsi
     pop rbx
+
+    vzeroupper
     ret
-streebog_key_schedule ENDP
+
+streebog_key_schedule_avx2 ENDP
 END

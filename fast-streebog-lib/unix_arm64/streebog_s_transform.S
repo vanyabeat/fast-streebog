@@ -12,267 +12,110 @@
 PRIVATE_GLOBAL SYMBOL(streebog_s_transform)
 .global SYMBOL(streebog_s_transform)
 
-// S-box table (256 bytes)
 .align 4
-STREEBOG_SBOX:
-.byte 0xFC, 0xEE, 0xDD, 0x11, 0xCF, 0x6E, 0x31, 0x16
-.byte 0xFB, 0xC4, 0xFA, 0xDA, 0x23, 0xC5, 0x04, 0x4D
-.byte 0xE9, 0x77, 0xF0, 0xDB, 0x93, 0x2E, 0x99, 0xBA
-.byte 0x17, 0x36, 0xF1, 0xBB, 0x14, 0xCD, 0x5F, 0xC1
-.byte 0xF9, 0x18, 0x65, 0x5A, 0xE2, 0x5C, 0xEF, 0x21
-.byte 0x81, 0x1C, 0x3C, 0x42, 0x8B, 0x01, 0x8E, 0x4F
-.byte 0x05, 0x84, 0x02, 0xAE, 0xE3, 0x6A, 0x8F, 0xA0
-.byte 0x06, 0x0B, 0xED, 0x98, 0x7F, 0xD4, 0xD3, 0x1F
-.byte 0xEB, 0x34, 0x2C, 0x51, 0xEA, 0xC8, 0x48, 0xAB
-.byte 0xF2, 0x2A, 0x68, 0xA2, 0xFD, 0x3A, 0xCE, 0xCC
-.byte 0xB5, 0x70, 0x0E, 0x56, 0x08, 0x0C, 0x76, 0x12
-.byte 0xBF, 0x72, 0x13, 0x47, 0x9C, 0xB7, 0x5D, 0x87
-.byte 0x15, 0xA1, 0x96, 0x29, 0x10, 0x7B, 0x9A, 0xC7
-.byte 0xF3, 0x91, 0x78, 0x6F, 0x9D, 0x9E, 0xB2, 0xB1
-.byte 0x32, 0x75, 0x19, 0x3D, 0xFF, 0x35, 0x8A, 0x7E
-.byte 0x6D, 0x54, 0xC6, 0x80, 0xC3, 0xBD, 0x0D, 0x57
-.byte 0xDF, 0xF5, 0x24, 0xA9, 0x3E, 0xA8, 0x43, 0xC9
-.byte 0xD7, 0x79, 0xD6, 0xF6, 0x7C, 0x22, 0xB9, 0x03
-.byte 0xE0, 0x0F, 0xEC, 0xDE, 0x7A, 0x94, 0xB0, 0xBC
-.byte 0xDC, 0xE8, 0x28, 0x50, 0x4E, 0x33, 0x0A, 0x4A
-.byte 0xA7, 0x97, 0x60, 0x73, 0x1E, 0x00, 0x62, 0x44
-.byte 0x1A, 0xB8, 0x38, 0x82, 0x64, 0x9F, 0x26, 0x41
-.byte 0xAD, 0x45, 0x46, 0x92, 0x27, 0x5E, 0x55, 0x2F
-.byte 0x8C, 0xA3, 0xA5, 0x7D, 0x69, 0xD5, 0x95, 0x3B
-.byte 0x07, 0x58, 0xB3, 0x40, 0x86, 0xAC, 0x1D, 0xF7
-.byte 0x30, 0x37, 0x6B, 0xE4, 0x88, 0xD9, 0xE7, 0x89
-.byte 0xE1, 0x1B, 0x83, 0x49, 0x4C, 0x3F, 0xF8, 0xFE
-.byte 0x8D, 0x53, 0xAA, 0x90, 0xCA, 0xD8, 0x85, 0x61
-.byte 0x20, 0x71, 0x67, 0xA4, 0x2D, 0x2B, 0x09, 0x5B
-.byte 0xCB, 0x9B, 0x25, 0xD0, 0xBE, 0xE5, 0x6C, 0x52
-.byte 0x59, 0xA6, 0x74, 0xD2, 0xE6, 0xF4, 0xB4, 0xC0
-.byte 0xD1, 0x66, 0xAF, 0xC2, 0x39, 0x4B, 0x63, 0xB6
+SBOX_IDX_0: // 0-63
+    .byte 0xFC,0xEE,0xDD,0x11,0xCF,0x6E,0x31,0x16,0xFB,0xC4,0xFA,0xDA,0x23,0xC5,0x04,0x4D
+    .byte 0xE9,0x77,0xF0,0xDB,0x93,0x2E,0x99,0xBA,0x17,0x36,0xF1,0xBB,0x14,0xCD,0x5F,0xC1
+    .byte 0xF9,0x18,0x65,0x5A,0xE2,0x5C,0xEF,0x21,0x81,0x1C,0x3C,0x42,0x8B,0x01,0x8E,0x4F
+    .byte 0x05,0x84,0x02,0xAE,0xE3,0x6A,0x8F,0xA0,0x06,0x0B,0xED,0x98,0x7F,0xD4,0xD3,0x1F
 
-// Optimized S-transform: process 8 bytes at a time
-// void streebog_s_transform(const uint8_t *state, uint8_t *out)
+SBOX_IDX_1:  // 64-127
+    .byte 0xEB,0x34,0x2C,0x51,0xEA,0xC8,0x48,0xAB,0xF2,0x2A,0x68,0xA2,0xFD,0x3A,0xCE,0xCC
+    .byte 0xB5,0x70,0x0E,0x56,0x08,0x0C,0x76,0x12,0xBF,0x72,0x13,0x47,0x9C,0xB7,0x5D,0x87
+    .byte 0x15,0xA1,0x96,0x29,0x10,0x7B,0x9A,0xC7,0xF3,0x91,0x78,0x6F,0x9D,0x9E,0xB2,0xB1
+    .byte 0x32,0x75,0x19,0x3D,0xFF,0x35,0x8A,0x7E,0x6D,0x54,0xC6,0x80,0xC3,0xBD,0x0D,0x57
+
+SBOX_IDX_2:  // 128-191
+    .byte 0xDF,0xF5,0x24,0xA9,0x3E,0xA8,0x43,0xC9,0xD7,0x79,0xD6,0xF6,0x7C,0x22,0xB9,0x03
+    .byte 0xE0,0x0F,0xEC,0xDE,0x7A,0x94,0xB0,0xBC,0xDC,0xE8,0x28,0x50,0x4E,0x33,0x0A,0x4A
+    .byte 0xA7,0x97,0x60,0x73,0x1E,0x00,0x62,0x44,0x1A,0xB8,0x38,0x82,0x64,0x9F,0x26,0x41
+    .byte 0xAD,0x45,0x46,0x92,0x27,0x5E,0x55,0x2F,0x8C,0xA3,0xA5,0x7D,0x69,0xD5,0x95,0x3B
+
+SBOX_IDX_3:  // 192-255
+    .byte 0x07,0x58,0xB3,0x40,0x86,0xAC,0x1D,0xF7,0x30,0x37,0x6B,0xE4,0x88,0xD9,0xE7,0x89
+    .byte 0xE1,0x1B,0x83,0x49,0x4C,0x3F,0xF8,0xFE,0x8D,0x53,0xAA,0x90,0xCA,0xD8,0x85,0x61
+    .byte 0x20,0x71,0x67,0xA4,0x2D,0x2B,0x09,0x5B,0xCB,0x9B,0x25,0xD0,0xBE,0xE5,0x6C,0x52
+    .byte 0x59,0xA6,0x74,0xD2,0xE6,0xF4,0xB4,0xC0,0xD1,0x66,0xAF,0xC2,0x39,0x4B,0x63,0xB6
+
+.global SYMBOL(streebog_s_transform)
+PRIVATE_GLOBAL SYMBOL(streebog_s_transform)
+
+// tbl returns zero if the index is out of range. 
+// By subtracting 64 after each S-box block, we shift the indices 
+// to point to the next quarter of the S-box table. 
+// This ensures proper byte-wise transformation for the full 256-entry table.
 SYMBOL(streebog_s_transform):
-    // x0 = state (input), x1 = out (output)
+
+    // Load input block into NEON registers (16 bytes per register)
+    ld1     {v0.16b, v1.16b, v2.16b, v3.16b}, [x0]
+
+    // Load S-box tables into NEON registers 
+    adrp    x2, SBOX_IDX_0@PAGE
+    add     x2, x2, SBOX_IDX_0@PAGEOFF
+    ld1     {v4.16b,  v5.16b,  v6.16b,  v7.16b},  [x2], #64
+    ld1     {v8.16b,  v9.16b,  v10.16b, v11.16b}, [x2], #64
+    ld1     {v12.16b, v13.16b, v14.16b, v15.16b}, [x2], #64
+    ld1     {v16.16b, v17.16b, v18.16b, v19.16b}, [x2]
+
+    // Constant vector for table offset adjustment
+    movi    v28.16b, #64
+
+    // Process first 16 bytes with SBOX_IDX_0
+    tbl     v20.16b, {v4.16b,  v5.16b,  v6.16b,  v7.16b},  v0.16b
+    tbl     v21.16b, {v4.16b,  v5.16b,  v6.16b,  v7.16b},  v1.16b
+    tbl     v22.16b, {v4.16b,  v5.16b,  v6.16b,  v7.16b},  v2.16b
+    tbl     v23.16b, {v4.16b,  v5.16b,  v6.16b,  v7.16b},  v3.16b
     
-    // Get address of S-box table
-    adrp    x2, STREEBOG_SBOX@PAGE
-    add     x2, x2, STREEBOG_SBOX@PAGEOFF
-    
-    // Process 64 bytes in 8 iterations of 8 bytes each (fully unrolled)
-    
-    // === Bytes 0-7 ===
-    ldr     x3, [x0, #0]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #0]
-    
-    // === Bytes 8-15 ===
-    ldr     x3, [x0, #8]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #8]
-    
-    // === Bytes 16-23 ===
-    ldr     x3, [x0, #16]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #16]
-    
-    // === Bytes 24-31 ===
-    ldr     x3, [x0, #24]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #24]
-    
-    // === Bytes 32-39 ===
-    ldr     x3, [x0, #32]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #32]
-    
-    // === Bytes 40-47 ===
-    ldr     x3, [x0, #40]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #40]
-    
-    // === Bytes 48-55 ===
-    ldr     x3, [x0, #48]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #48]
-    
-    // === Bytes 56-63 ===
-    ldr     x3, [x0, #56]
-    and     x4, x3, #0xFF
-    ldrb    w4, [x2, x4]
-    ubfx    x5, x3, #8, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #8
-    ubfx    x5, x3, #16, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #16
-    ubfx    x5, x3, #24, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #24
-    ubfx    x5, x3, #32, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #32
-    ubfx    x5, x3, #40, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #40
-    ubfx    x5, x3, #48, #8
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #48
-    lsr     x5, x3, #56
-    ldrb    w5, [x2, x5]
-    orr     x4, x4, x5, lsl #56
-    str     x4, [x1, #56]
-    
+    // Adjust input bytes for next S-box block
+    sub     v0.16b, v0.16b, v28.16b
+    sub     v1.16b, v1.16b, v28.16b
+    sub     v2.16b, v2.16b, v28.16b
+    sub     v3.16b, v3.16b, v28.16b
+
+    // Process second 16 bytes with SBOX_IDX_1
+    tbl     v24.16b, {v8.16b,  v9.16b,  v10.16b, v11.16b}, v0.16b
+    tbl     v25.16b, {v8.16b,  v9.16b,  v10.16b, v11.16b}, v1.16b
+    tbl     v26.16b, {v8.16b,  v9.16b,  v10.16b, v11.16b}, v2.16b
+    tbl     v27.16b, {v8.16b,  v9.16b,  v10.16b, v11.16b}, v3.16b
+
+    orr     v20.16b, v20.16b, v24.16b
+    orr     v21.16b, v21.16b, v25.16b
+    orr     v22.16b, v22.16b, v26.16b
+    orr     v23.16b, v23.16b, v27.16b
+
+    sub     v0.16b, v0.16b, v28.16b
+    sub     v1.16b, v1.16b, v28.16b
+    sub     v2.16b, v2.16b, v28.16b
+    sub     v3.16b, v3.16b, v28.16b
+
+    // Process third 16 bytes with SBOX_IDX_2
+    tbl     v24.16b, {v12.16b, v13.16b, v14.16b, v15.16b}, v0.16b
+    tbl     v25.16b, {v12.16b, v13.16b, v14.16b, v15.16b}, v1.16b
+    tbl     v26.16b, {v12.16b, v13.16b, v14.16b, v15.16b}, v2.16b
+    tbl     v27.16b, {v12.16b, v13.16b, v14.16b, v15.16b}, v3.16b
+
+    orr     v20.16b, v20.16b, v24.16b
+    orr     v21.16b, v21.16b, v25.16b
+    orr     v22.16b, v22.16b, v26.16b
+    orr     v23.16b, v23.16b, v27.16b
+
+    sub     v0.16b, v0.16b, v28.16b
+    sub     v1.16b, v1.16b, v28.16b
+    sub     v2.16b, v2.16b, v28.16b
+    sub     v3.16b, v3.16b, v28.16b
+
+    // Process last 16 bytes with SBOX_IDX_3
+    tbl     v24.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+    tbl     v25.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v1.16b
+    tbl     v26.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v2.16b
+    tbl     v27.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v3.16b
+
+    orr     v20.16b, v20.16b, v24.16b
+    orr     v21.16b, v21.16b, v25.16b
+    orr     v22.16b, v22.16b, v26.16b
+    orr     v23.16b, v23.16b, v27.16b
+
+    // Store transformed block back to memory
+    st1     {v20.16b, v21.16b, v22.16b, v23.16b}, [x1]
+
     ret
