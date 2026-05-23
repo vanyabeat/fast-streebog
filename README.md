@@ -10,15 +10,17 @@ Fast Streebog is an optimized library implementing the Russian national standard
 
 | Platform | Architecture | ASM Optimizations |
 |----------|--------------|-------------------|
-| ✅ Windows | x64 | AVX-512 MASM |
+| ✅ Windows | x64 | AVX-512, AVX2, SSSE3, SSE2 MASM |
 | ✅ macOS | ARM64 (Apple Silicon) | NEON GAS |
 | ✅ Linux | ARM64 | NEON GAS |
+| ✅ Linux | x64 | AVX2, SSSE3 GAS |
 | ✅ All platforms | Any | Pure C fallback |
 
 ## Features
 
 - **High Performance**: Core transformations implemented in platform-specific assembly
-  - **Windows x64**: AVX-512 MASM optimizations
+  - **Windows x64**: AVX-512, AVX2, SSSE3, SSE2 MASM optimizations with runtime dispatch
+  - **Linux x64**: AVX2 and SSSE3 GAS optimizations
   - **ARM64 (macOS/Linux)**: NEON SIMD optimizations
 - **Dual Output**: Support for both 256-bit and 512-bit hash variants
 - **Streaming API**: Process data in chunks with init/update/final pattern
@@ -56,20 +58,34 @@ Performance comparison on 1 MB data (3 iterations average):
 
 **Key x64 optimizations:**
 - Precalculated Ax[8][256] lookup tables (16 KB) for L-transform
-- AVX-512 assembly implementations of S, P, L, XOR, ADD, and KeySchedule primitives
+- AVX-512, AVX2, SSSE3, and SSE2 assembly implementations of S, P, L, XOR, ADD, and KeySchedule primitives
+- Runtime CPU feature detection and dispatch to the best available implementation
 - Optimized L-transform: 8 table lookups instead of up to 64 bit-by-bit operations
 
 Tested on Windows x64 with Visual Studio 2022 (MSVC 19.44).
 
+### Linux x64 (AVX2 / SSSE3)
+
+Linux x64 now uses GAS assembly with AVX2 and SSSE3 optimizations, matching the Windows x64 algorithmic approach with GCC/Clang-compatible syntax.
+
+**Key Linux x64 optimizations:**
+- Precalculated Ax[8][256] lookup tables for L-transform
+- AVX2 and SSSE3 GAS implementations of S, P, L, XOR, ADD, and KeySchedule
+- Compiled with `-x assembler-with-cpp` for full preprocessor support
+
 ## Requirements
 
 ### Windows x64
-- CPU with AVX-512 support (Intel Skylake-X, Ice Lake, or newer; AMD Zen 4 or newer)
+- CPU with SSE2 or newer (SSE2 minimum; AVX2/AVX-512 recommended for best performance)
 - Visual Studio 2019 or later (for building from source)
+
+### Linux x64
+- CPU with SSSE3 or newer (AVX2 recommended)
+- CMake 3.20+, GCC or Clang
 
 ### macOS/Linux ARM64
 - Apple Silicon (M1/M2/M3) or ARMv8-A with NEON
-- CMake 3.16+, Clang or GCC
+- CMake 3.20+, Clang or GCC
 
 ## Installation
 
@@ -219,10 +235,15 @@ MIT License - see [LICENSE](LICENSE) for details.
 ```
 fast-streebog/
 ├── fast-streebog-lib/
-│   ├── include/           # Public headers
-│   ├── src/               # C implementation
-│   ├── unix_arm64/        # ARM64 NEON assembly (macOS/Linux)
-│   └── windows_x64/       # x64 AVX-512 assembly (Windows)
-├── fast-streebog-tests/   # GoogleTest unit tests
-└── streebog_release/      # Built artifacts
+│   ├── include/             # Public headers
+│   ├── src/                 # C implementation
+│   ├── unix_arm64/          # ARM64 NEON assembly (macOS/Linux)
+│   ├── linux_x64_avx2/      # Linux x64 AVX2 GAS assembly
+│   ├── linux_x64_ssse3/     # Linux x64 SSSE3 GAS assembly
+│   ├── windows_x64_avx512/  # Windows x64 AVX-512 MASM assembly
+│   ├── windows_x64_avx2/    # Windows x64 AVX2 MASM assembly
+│   ├── windows_x64_ssse3/   # Windows x64 SSSE3 MASM assembly
+│   └── windows_x64_sse2/    # Windows x64 SSE2 MASM assembly
+├── fast-streebog-tests/     # GoogleTest unit tests
+└── streebog_release/        # Built artifacts
 ```
