@@ -8,20 +8,28 @@ Fast Streebog is an optimized library implementing the Russian national standard
 
 ## Supported Platforms
 
-| Platform | Architecture | ASM Optimizations |
+| Platform | Architecture | Optimizations |
 |----------|--------------|-------------------|
-| ✅ Windows | x64 | AVX-512, AVX2, SSSE3, SSE2 MASM |
-| ✅ macOS | ARM64 (Apple Silicon) | NEON GAS |
-| ✅ Linux | ARM64 | NEON GAS |
-| ✅ Linux | x64 | AVX2, SSSE3 GAS |
-| ✅ All platforms | Any | Pure C fallback |
+| ✅ Windows | x64 | **AVX-512 VBMI+GFNI fused compression**, AVX-512, AVX2, SSSE3, SSE2 MASM |
+| ✅ macOS | ARM64 (Apple Silicon) | Fused table-driven compression, NEON GAS |
+| ✅ Linux | ARM64 | Fused table-driven compression, NEON GAS |
+| ✅ Linux | x64 | Fused table-driven compression, AVX2, SSSE3 GAS |
+| ✅ All platforms | Any | Fused table-driven C compression |
 
 ## Features
 
-- **High Performance**: Core transformations implemented in platform-specific assembly
-  - **Windows x64**: AVX-512, AVX2, SSSE3, SSE2 MASM optimizations with runtime dispatch
-  - **Linux x64**: AVX2 and SSSE3 GAS optimizations
-  - **ARM64 (macOS/Linux)**: NEON SIMD optimizations
+- **Fused compression path (v1.1.0)**: the entire `g_N` compression (25 S→P→L rounds per block) runs
+  with no intermediate memory passes:
+  - **AVX-512 VBMI + GFNI** (Ice Lake / Zen 4 and newer): the whole 512-bit state is processed in a
+    single ZMM register — S-box via `VPERMB`, P-permutation via a single byte shuffle, L-transform
+    via `VGF2P8AFFINEQB` bit-matrix multiplication
+  - **Fused table-driven C** (all other CPUs/platforms): S-box + P + L collapsed into one 16 KB
+    lookup layer, state kept in eight 64-bit registers for all 12 rounds
+  - Runtime CPU detection selects the best path automatically
+- **Assembly primitives**: platform-specific implementations of S, P, L, XOR, ADD, KeySchedule
+  - **Windows x64**: AVX-512, AVX2, SSSE3, SSE2 MASM with runtime dispatch
+  - **Linux x64**: AVX2 and SSSE3 GAS
+  - **ARM64 (macOS/Linux)**: NEON SIMD
 - **Dual Output**: Support for both 256-bit and 512-bit hash variants
 - **Streaming API**: Process data in chunks with init/update/final pattern
 - **One-shot API**: Simple single-call hashing for complete data
@@ -32,7 +40,11 @@ Fast Streebog is an optimized library implementing the Russian national standard
 
 ### ARM64 (Apple Silicon M1/M2/M3)
 
-Performance comparison on 1 MB data (3 iterations average):
+Since v1.1.0 the compression function uses the fused table-driven path on ARM64 as well,
+removing the per-primitive call overhead reported in
+[issue #5](https://github.com/vanyabeat/fast-streebog/issues/5).
+
+v1.0.x comparison on 1 MB data (3 iterations average):
 
 | Implementation | Throughput | Speedup |
 |---------------|------------|---------|
@@ -47,22 +59,26 @@ Performance comparison on 1 MB data (3 iterations average):
 
 Tested on macOS ARM64 (Apple Silicon).
 
-### Windows x64 (AVX-512)
+### Windows x64
 
-Performance comparison on 1 MB data (3 iterations average):
+Performance on 1 MB data (3 iterations average, Release build):
 
 | Implementation | Throughput | Speedup |
 |---------------|------------|---------|
-| **Fast Streebog (AVX-512 ASM)** | **97 MB/s** | **68x** |
-| Pure C Implementation (unoptimized) | 1.43 MB/s | 1x |
+| **v1.1.0 fused AVX-512 VBMI+GFNI** | **~410 MB/s** | **3.7x** |
+| v1.1.0 fused table-driven C | ~206 MB/s | 1.85x |
+| v1.0.x (chained ASM primitives) | ~112 MB/s | 1x |
 
-**Key x64 optimizations:**
-- Precalculated Ax[8][256] lookup tables (16 KB) for L-transform
-- AVX-512, AVX2, SSSE3, and SSE2 assembly implementations of S, P, L, XOR, ADD, and KeySchedule primitives
-- Runtime CPU feature detection and dispatch to the best available implementation
-- Optimized L-transform: 8 table lookups instead of up to 64 bit-by-bit operations
+**Key optimizations (v1.1.0):**
+- Fused `g_N` compression: one LPS round ≈ 35 vector instructions instead of ~200 scalar operations
+- S-box: 4x `VPERMB` over 64-byte table slices + mask blends
+- P-transform folded into a single `VPERMB` byte transpose
+- L-transform: 8x `VGF2P8AFFINEQB` with precomputed 8x8 GF(2) matrix blocks
+- Fallback fused C path: combined `AxS[8][256]` table (S-box + L in one lookup)
+- Requires GFNI + AVX-512 VBMI for the vector path (Intel Ice Lake+, AMD Zen 4+);
+  older CPUs automatically use the fused table-driven C path
 
-Tested on Windows x64 with Visual Studio 2022 (MSVC 19.44).
+Tested on Windows x64 with Visual Studio 2022+ (MSVC).
 
 ### Linux x64 (AVX2 / SSSE3)
 
@@ -76,7 +92,7 @@ Linux x64 now uses GAS assembly with AVX2 and SSSE3 optimizations, matching the 
 ## Requirements
 
 ### Windows x64
-- CPU with SSE2 or newer (SSE2 minimum; AVX2/AVX-512 recommended for best performance)
+- CPU with SSE2 or newer (AVX-512 VBMI + GFNI — Intel Ice Lake+ / AMD Zen 4+ — for maximum performance)
 - Visual Studio 2019 or later (for building from source)
 
 ### Linux x64

@@ -1,13 +1,12 @@
 /**
  * @file streebog_cpu.h
  * @brief CPU feature detection for Streebog implementation selection
- * 
+ *
  * Provides runtime detection of CPU capabilities (AVX2, SSSE3, AVX-512)
  * used to select optimized SIMD implementations of Streebog transforms.
  *
  * Detection is based on CPUID + XGETBV (on x86/x64 platforms).
  */
-
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -19,11 +18,14 @@ static inline int has_avx2(void)
 {
     int info[4];
     __cpuid(info, 0);
-    if (info[0] < 7) return 0;
+    if (info[0] < 7)
+        return 0;
     __cpuid(info, 1);
-    if (!(info[2] & (1 << 27))) return 0;
+    if (!(info[2] & (1 << 27)))
+        return 0;
     unsigned long long xcr = _xgetbv(0);
-    if ((xcr & 0x6) != 0x6) return 0;
+    if ((xcr & 0x6) != 0x6)
+        return 0;
     __cpuidex(info, 7, 0);
     return (info[1] & (1 << 5)) != 0;
 }
@@ -39,25 +41,57 @@ static inline int has_avx512(void)
 {
     int info[4];
     __cpuid(info, 0);
-    if (info[0] < 7) return 0;
+    if (info[0] < 7)
+        return 0;
     __cpuid(info, 1);
-    if (!(info[2] & (1 << 27))) return 0;
+    if (!(info[2] & (1 << 27)))
+        return 0;
     unsigned long long xcr = _xgetbv(0);
-    if ((xcr & 0xE6) != 0xE6) return 0;
+    if ((xcr & 0xE6) != 0xE6)
+        return 0;
     __cpuidex(info, 7, 0);
     return (info[1] & (1 << 16)) != 0;
+}
+
+// AVX-512 VBMI (VPERMB) + GFNI (VGF2P8AFFINEQB) — needed for the fully
+// vectorized fused compression path (Ice Lake / Zen 4 and newer)
+static inline int has_avx512_vbmi_gfni(void)
+{
+    int info[4];
+    __cpuid(info, 0);
+    if (info[0] < 7)
+        return 0;
+    __cpuid(info, 1);
+    if (!(info[2] & (1 << 27)))
+        return 0;
+    unsigned long long xcr = _xgetbv(0);
+    if ((xcr & 0xE6) != 0xE6)
+        return 0;
+    __cpuidex(info, 7, 0);
+    if (!(info[1] & (1 << 16)))
+        return 0; // AVX512F
+    if (!(info[1] & (1 << 30)))
+        return 0; // AVX512BW
+    if (!(info[2] & (1 << 1)))
+        return 0; // AVX512VBMI
+    if (!(info[2] & (1 << 8)))
+        return 0; // GFNI
+    return 1;
 }
 
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__amd64__))
 #include <cpuid.h>
 
-static int has_avx2(void) {
+static int has_avx2(void)
+{
     unsigned int eax, ebx, ecx, edx;
-    if (__get_cpuid_max(0, NULL) < 7) return 0;
+    if (__get_cpuid_max(0, NULL) < 7)
+        return 0;
     __cpuid_count(7, 0, eax, ebx, ecx, edx);
     return (ebx & (1u << 5)) != 0;
 }
-static int has_ssse3(void) {
+static int has_ssse3(void)
+{
     unsigned int eax, ebx, ecx, edx;
     __cpuid(1, eax, ebx, ecx, edx);
     return (ecx & (1u << 9)) != 0;
@@ -66,7 +100,16 @@ static int has_ssse3(void) {
 // Non-x86 platforms: SIMD feature detection not implemented
 // All features default to "not available"
 #else
-static inline int has_avx2(void)   { return 0; }
-static inline int has_ssse3(void)  { return 0; }
-static inline int has_avx512(void) { return 0; }
+static inline int has_avx2(void)
+{
+    return 0;
+}
+static inline int has_ssse3(void)
+{
+    return 0;
+}
+static inline int has_avx512(void)
+{
+    return 0;
+}
 #endif
