@@ -33,8 +33,10 @@ jobs:
       - name: Setup MSVC
         uses: microsoft/setup-msbuild@v2
 
+      # No hardcoded VS generator: windows-latest image ships whatever VS is current
+      # (VS 2022 was removed from the image, which broke "Visual Studio 17 2022")
       - name: Configure CMake
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+        run: cmake -B build -A x64
 
       - name: Build Release DLL
         run: cmake --build build --config Release --target fast-streebog-dll
